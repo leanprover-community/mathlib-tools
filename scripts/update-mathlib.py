@@ -17,7 +17,7 @@ from auth_github import auth_github
 self_update = '--self-update' in sys.argv
 
 if self_update:
-    mathlib_url = 'https://raw.githubusercontent.com/leanprover-community/mathlib'
+    mathlib_url = 'https://raw.githubusercontent.com/leanprover-community/mathlib-tools'
     branch  = 'master'
     installer_path = 'scripts/remote-install-update-mathlib.sh'
     os.system("curl {%s}/{%s}/{%s} -sSf | sh" % (mathlib_url,branch,installer_path))

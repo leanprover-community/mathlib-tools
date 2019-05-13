@@ -56,13 +56,13 @@ fi
 pip3 install --upgrade $USER setuptools || exit -1
 pip3 install --upgrade $USER $PYTHON_DEPS || exit -1
 echo "Fetching the update-mathlib script"
-curl -o update-mathlib.py https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/update-mathlib.py
-curl -o cache-olean.py https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/cache-olean.py
-curl -o setup-lean-git-hooks.sh https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/setup-lean-git-hooks.sh
-curl -o delayed_interrupt.py https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/delayed_interrupt.py
-curl -o auth_github.py https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/auth_github.py
-curl -o post-commit https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/post-commit
-curl -o post-checkout https://raw.githubusercontent.com/leanprover-community/mathlib/$BRANCH/scripts/post-checkout
+curl -o update-mathlib.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/update-mathlib.py
+curl -o cache-olean.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/cache-olean.py
+curl -o setup-lean-git-hooks.sh https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/setup-lean-git-hooks.sh
+curl -o delayed_interrupt.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/delayed_interrupt.py
+curl -o auth_github.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/auth_github.py
+curl -o post-commit https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/post-commit
+curl -o post-checkout https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/post-checkout
 echo "installing it in \$HOME/.mathlib/bin"
 chmod +x update-mathlib.py
 mkdir -p $HOME/.mathlib/bin || true
