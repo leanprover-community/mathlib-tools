@@ -40,7 +40,7 @@ jobs:
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
-        - setup-lean-git-hooks
+        - echo y | setup-lean-git-hooks
 
     - language: sh
       install:
@@ -53,7 +53,7 @@ jobs:
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
-        - setup-lean-git-hooks
+        - echo y | setup-lean-git-hooks
 
     - sudo: true
       language: python
@@ -71,7 +71,7 @@ jobs:
         - update-mathlib
         - cache-olean
         - cache-olean --fetch
-        - setup-lean-git-hooks
+        - echo y | setup-lean-git-hooks
 
     - language: sh
       install:
@@ -86,4 +86,4 @@ jobs:
         - update-mathlib
         - cache-olean
         - cache-olean --fetch
-        - setup-lean-git-hooks
+        - echo y | setup-lean-git-hooks
