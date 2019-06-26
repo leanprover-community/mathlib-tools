@@ -86,4 +86,4 @@ jobs:
         - update-mathlib
         - cache-olean
         - cache-olean --fetch
-        - echo y | setup-lean-git-hooks
+        - yes | setup-lean-git-hooks
