@@ -40,7 +40,7 @@ jobs:
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
-        - echo y | setup-lean-git-hooks
+        - yes | setup-lean-git-hooks
 
     - language: sh
       install:
@@ -53,7 +53,7 @@ jobs:
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
-        - echo y | setup-lean-git-hooks
+        - yes | setup-lean-git-hooks
 
     - sudo: true
       language: python
@@ -66,12 +66,12 @@ jobs:
       script:
         - cp scripts/leanpkg-example.toml leanpkg.toml
         - cd scripts
-        - echo y | bash setup-dev-scripts.sh --global
+        - yes | bash setup-dev-scripts.sh --global
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
         - cache-olean --fetch
-        - echo y | setup-lean-git-hooks
+        - yes | setup-lean-git-hooks
 
     - language: sh
       install:
@@ -81,7 +81,7 @@ jobs:
       script:
         - cp scripts/leanpkg-example.toml leanpkg.toml
         - cd scripts
-        - echo y | bash setup-dev-scripts.sh
+        - yes | bash setup-dev-scripts.sh
         - source $HOME/.profile
         - update-mathlib
         - cache-olean
