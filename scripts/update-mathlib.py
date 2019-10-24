@@ -49,6 +49,9 @@ else:
               'instead of a GitHub repository')
         sys.exit(1)
 
+    # some leanpkg files might contain urls ending in '/'
+    git_url = git_url.rstrip('/')
+    
     if git_url not in ['https://github.com/leanprover/mathlib',
                        'https://github.com/leanprover-community/mathlib']:
         print('Error: mathlib reference is a fork')
