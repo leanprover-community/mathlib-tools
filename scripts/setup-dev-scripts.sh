@@ -49,8 +49,8 @@ for dep in $PYTHON_DEPS ; do
 	fi
 done
 
-touch $HOME/.profile
-X=$(grep -q ".mathlib/bin" $HOME/.profile)
+touch "$HOME"/.profile
+X=$(grep -q ".mathlib/bin" "$HOME"/.profile)
 SCRIPTS_ON_PATH=$?
 
 echo "This script will:"
@@ -97,8 +97,8 @@ then
 	    echo ... mathlib scripts are already added to \$PATH in .profile
 	else
 	    echo ... adding "export PATH=\"\$HOME/.mathlib/bin:\$PATH\"" in \$HOME/.profile
-	    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> $HOME/.profile
-	    echo ... now run: \"source \$HOME/.profile\"
+	    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> "$HOME"/.profile
+	    echo ... now run: \'source \"$HOME\"/.profile\'
 	fi
 	echo "... finished setting up development scripts."
 else

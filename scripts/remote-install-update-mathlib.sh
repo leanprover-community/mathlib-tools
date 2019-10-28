@@ -78,14 +78,14 @@ mv setup-lean-git-hooks.sh $HOME/.mathlib/bin/setup-lean-git-hooks
 mv post-commit   $HOME/.mathlib/hooks/
 mv post-checkout $HOME/.mathlib/hooks/
 
-if grep -q ".mathlib/bin" $HOME/.profile
+if grep -q ".mathlib/bin" "$HOME"/.profile
 then
     echo mathlib scripts are already added to \$PATH in .profile
 else
     echo "Adding a path modification in .profile"
-    touch $HOME/.profile
-    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> $HOME/.profile
-    echo $HOME/.profile
-    ls $HOME/.profile
-    echo "You should now run \"source $HOME/.profile\""
+    touch "$HOME"/.profile
+    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> "$HOME"/.profile
+    echo "$HOME"/.profile
+    ls "$HOME"/.profile
+    echo "You should now run 'source \"$HOME\"/.profile'"
 fi
