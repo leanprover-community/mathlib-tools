@@ -78,20 +78,20 @@ then
 	# TODO we could test the status of all these files, and skip this step if everything is already up to date?
 	BASEDIR=$(dirname "$0")
 	cd $BASEDIR
-	mkdir -p $HOME/.mathlib/bin || true
-	mkdir -p $HOME/.mathlib/hooks || true
-	cp auth_github.py          $HOME/.mathlib/bin/
-	cp delayed_interrupt.py    $HOME/.mathlib/bin/
-	cp update-mathlib.py       $HOME/.mathlib/bin/update-mathlib
-	cp cache-olean.py          $HOME/.mathlib/bin/cache-olean
-	cp lean-depot.py           $HOME/.mathlib/bin/lean-depot
-	cp setup-lean-git-hooks.sh $HOME/.mathlib/bin/setup-lean-git-hooks
-        chmod +x $HOME/.mathlib/bin/update-mathlib
-        chmod +x $HOME/.mathlib/bin/cache-olean
-        chmod +x $HOME/.mathlib/bin/lean-depot
-        chmod +x $HOME/.mathlib/bin/setup-lean-git-hooks
-	cp post-commit   $HOME/.mathlib/hooks/
-	cp post-checkout $HOME/.mathlib/hooks/
+	mkdir -p "$HOME/.mathlib/bin" || true
+	mkdir -p "$HOME/.mathlib/hooks" || true
+	cp auth_github.py          "$HOME/.mathlib/bin/"
+	cp delayed_interrupt.py    "$HOME/.mathlib/bin/"
+	cp update-mathlib.py       "$HOME/.mathlib/bin/update-mathlib"
+	cp cache-olean.py          "$HOME/.mathlib/bin/cache-olean"
+	cp lean-depot.py           "$HOME/.mathlib/bin/lean-depot"
+	cp setup-lean-git-hooks.sh "$HOME/.mathlib/bin/setup-lean-git-hooks"
+        chmod +x "$HOME/.mathlib/bin/update-mathlib"
+        chmod +x "$HOME/.mathlib/bin/cache-olean"
+        chmod +x "$HOME/.mathlib/bin/lean-depot"
+        chmod +x "$HOME/.mathlib/bin/setup-lean-git-hooks"
+	cp post-commit   "$HOME/.mathlib/hooks/"
+	cp post-checkout "$HOME/.mathlib/hooks/"
 	if [[ $SCRIPTS_ON_PATH -eq 0 ]]
 	then
 	    echo ... mathlib scripts are already added to \$PATH in .profile
