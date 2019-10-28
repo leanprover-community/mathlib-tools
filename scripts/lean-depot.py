@@ -37,8 +37,10 @@ def inline_table(d):
 def is_prefix_of(x,y):
     return x == y[:len(x)]
 
-def snapshot_name(x):
-    (base,ext) = os.path.splitext(x)
+def snapshot_name(fn):
+    """ `fn` should be of the shape `snapshot-2019-10.toml` and `snapshot_name(fn)` will 
+    return `2019-10`. For a `snapshot.toml` name, the snapshot name is deemed to be `nightly` """
+    (base,ext) = os.path.splitext(fn)
     if base == 'snapshot':
         return 'nightly'
     else:
