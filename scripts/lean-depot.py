@@ -98,19 +98,18 @@ def configure():
     """setup leanpkg configuration"""
 
     prj = toml.load('lean-depot.toml')
+    name = prj['package']['name']
     tag  = prj['package']['lib_snapshot']
     vers = prj['package']['lean_version']
     depot = toml.load(get_depot(vers)[tag])
     # print(depot)
     # print(prj)
-    name         = prj['package']['name']
-    lean_version = prj['package']['lean_version']
     snapshot = { v['git'][0] : v['rev'] for (k,v) in depot['snapshot'].items() }
     deps = { k : inline_table({ 'git' : v, 'rev' : snapshot[v] })
              for (k,v) in prj['dependencies'].items() }
     deps.update( prj['extra_deps'].items()  )
     leanpkg = { 'package' : { 'name' : name,
-                              'lean_version' : lean_version,
+                              'lean_version' : vers,
                               'path' : 'src',
                               'version' : '0.1' },
                 'dependencies' : deps }
@@ -214,7 +213,7 @@ def make_snapshot(path):
                                   'desc' : pkg['description'] }
                                 for (k,pkg) in pkgs.items() } }
     with open(path, 'w') as h:
-        print(toml.dump(snap, h))
+        toml.dump(snap, h)
 
 @user_command('resolver')
 def resolver():
@@ -291,7 +290,3 @@ if __name__ == '__main__':
              usage()
     else:
         usage()
-
-# Local Variables:
-# eval: (add-hook 'after-save-hook (lambda () (copy-file (buffer-file-name) "~/.mathlib/bin/lean-depot" t)) nil t)
-# End:
