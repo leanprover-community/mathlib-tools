@@ -46,9 +46,9 @@ def snapshot_name(fn):
     else:
         return base[len('snapshot')+1:]
 
-def get_depot(vers):
+def get_depot(lean_version):
     dir = os.getcwd()
-    os.chdir(f'_depot/{vers}')
+    os.chdir(f'_depot/{lean_version}')
     try:
         os.system(f'git fetch --all')
         vs = { snapshot_name(v) : os.path.abspath(v)
