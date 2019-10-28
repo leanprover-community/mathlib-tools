@@ -57,7 +57,7 @@ pip3 install --upgrade $USER setuptools || exit -1
 pip3 install --upgrade $USER $PYTHON_DEPS || exit -1
 echo "Fetching the update-mathlib script"
 curl -o update-mathlib.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/update-mathlib.py
-curl -o update-mathlib.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/lean-depot.py
+curl -o lean-depot.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/lean-depot.py
 curl -o cache-olean.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/cache-olean.py
 curl -o setup-lean-git-hooks.sh https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/setup-lean-git-hooks.sh
 curl -o delayed_interrupt.py https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/delayed_interrupt.py
@@ -66,17 +66,17 @@ curl -o post-commit https://raw.githubusercontent.com/leanprover-community/mathl
 curl -o post-checkout https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/post-checkout
 echo "installing it in \$HOME/.mathlib/bin"
 chmod +x update-mathlib.py cache-olean.py lean-depot.py
-mkdir -p $HOME/.mathlib/bin || true
-mkdir -p $HOME/.mathlib/hooks || true
+mkdir -p "$HOME/.mathlib/bin" || true
+mkdir -p "$HOME/.mathlib/hooks" || true
 
-mv update-mathlib.py       $HOME/.mathlib/bin/update-mathlib
-mv cache-olean.py          $HOME/.mathlib/bin/cache-olean
-mv lean-depot.py          $HOME/.mathlib/bin/lean-depot
-mv delayed_interrupt.py    $HOME/.mathlib/bin/
-mv auth_github.py          $HOME/.mathlib/bin/
-mv setup-lean-git-hooks.sh $HOME/.mathlib/bin/setup-lean-git-hooks
-mv post-commit   $HOME/.mathlib/hooks/
-mv post-checkout $HOME/.mathlib/hooks/
+mv update-mathlib.py       "$HOME/.mathlib/bin/update-mathlib"
+mv cache-olean.py          "$HOME/.mathlib/bin/cache-olean"
+mv lean-depot.py           "$HOME/.mathlib/bin/lean-depot"
+mv delayed_interrupt.py    "$HOME/.mathlib/bin/"
+mv auth_github.py          "$HOME/.mathlib/bin/"
+mv setup-lean-git-hooks.sh "$HOME/.mathlib/bin/setup-lean-git-hooks"
+mv post-commit   "$HOME/.mathlib/hooks/"
+mv post-checkout "$HOME/.mathlib/hooks/"
 
 if grep -q ".mathlib/bin" "$HOME"/.profile
 then
