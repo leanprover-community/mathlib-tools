@@ -82,8 +82,10 @@ def find_best_match(prj):
               for (k,v) in depot
               if len([ k2 for k2 in deps.values()
                        if k2 not in v ]) == 0 ]
-    (x,depot) = (depot[0], depot[1:])
-    if len(depot) == 0: snap = x
+    depot.remove('nightly')
+    # `depot` is expected to hold a set of snapshots labelled by dates and one labelled by `nightly`.
+    # `nightly` is a last resort for the snapshots
+    if len(depot) == 0: snap = 'nightly'
     else: snap = max(depot)
     return snap
 
