@@ -6,8 +6,8 @@ if [ -e $HOOK_DIR ]; then
 	echo    # (optional) move to a new line
 	if [[ $REPLY =~ ^[Yy]$ ]]
 	then
-	    cp $HOME/.mathlib/hooks/post-commit $HOOK_DIR &&
-	    cp $HOME/.mathlib/hooks/post-checkout $HOOK_DIR &&
+	    cp "$HOME"/.mathlib/hooks/post-commit $HOOK_DIR &&
+	    cp "$HOME"/.mathlib/hooks/post-checkout $HOOK_DIR &&
 	    echo "Successfully copied scripts"
 	else
 		echo "Cancelled..."

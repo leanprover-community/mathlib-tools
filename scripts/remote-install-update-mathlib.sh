@@ -69,26 +69,25 @@ chmod +x cache-olean.py
 chmod +x setup-lean-git-hooks.sh
 chmod +x post-commit
 chmod +x post-checkout
-mkdir -p $HOME/.mathlib/bin || true
-mkdir -p $HOME/.mathlib/hooks || true
+mkdir -p "$HOME"/.mathlib/bin || true
+mkdir -p "$HOME"/.mathlib/hooks || true
 
-mv update-mathlib.py       $HOME/.mathlib/bin/update-mathlib
-mv cache-olean.py          $HOME/.mathlib/bin/cache-olean
-mv delayed_interrupt.py    $HOME/.mathlib/bin/
-mv auth_github.py          $HOME/.mathlib/bin/
-mv setup-lean-git-hooks.sh $HOME/.mathlib/bin/setup-lean-git-hooks
-mv post-commit   $HOME/.mathlib/hooks/
-mv post-checkout $HOME/.mathlib/hooks/
+mv update-mathlib.py       "$HOME"/.mathlib/bin/update-mathlib
+mv cache-olean.py          "$HOME"/.mathlib/bin/cache-olean
+mv delayed_interrupt.py    "$HOME"/.mathlib/bin/
+mv auth_github.py          "$HOME"/.mathlib/bin/
+mv setup-lean-git-hooks.sh "$HOME"/.mathlib/bin/setup-lean-git-hooks
+mv post-commit   "$HOME"/.mathlib/hooks/
+mv post-checkout "$HOME"/.mathlib/hooks/
 
-if grep -q ".mathlib/bin" $HOME/.profile
+if grep -q ".mathlib/bin" "$HOME"/.profile
 then
     echo mathlib scripts are already added to \$PATH in .profile
 else
     echo "Adding a path modification in .profile"
-    touch $HOME/.profile
-    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> $HOME/.profile
-    echo $HOME/.profile
-    ls $HOME/.profile
-    echo "You should now run \"source $HOME/.profile\""
+    touch "$HOME"/.profile
+    echo "export PATH=\"\$HOME/.mathlib/bin:\$PATH\" " >> "$HOME"/.profile
+    echo "$HOME"/.profile
+    ls "$HOME"/.profile
+    echo "You should now run 'source \"$HOME\"/.profile'"
 fi
-
