@@ -65,6 +65,10 @@ curl -o post-commit https://raw.githubusercontent.com/leanprover-community/mathl
 curl -o post-checkout https://raw.githubusercontent.com/leanprover-community/mathlib-tools/$BRANCH/scripts/post-checkout
 echo "installing it in \$HOME/.mathlib/bin"
 chmod +x update-mathlib.py
+chmod +x cache-olean.py
+chmod +x setup-lean-git-hooks.sh
+chmod +x post-commit
+chmod +x post-checkout
 mkdir -p "$HOME"/.mathlib/bin || true
 mkdir -p "$HOME"/.mathlib/hooks || true
 
