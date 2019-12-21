@@ -87,6 +87,12 @@ if __name__ == "__main__":
         print('Repository not initialized')
         sys.exit(-1)
 
+    if repo.is_dirty():
+        if sys.argv[2:] != ['--even-if-dirty'] and\
+        input('Your repo is dirty. You may lose data if you proceed. Proceed? [N] ').lower() != 'y':
+            sys.exit(-1)
+        print('Warning: proceeding with dirty repo.')
+
     root_dir = repo.working_tree_dir
     os.chdir(root_dir)
     rev = repo.commit().hexsha
@@ -96,7 +102,7 @@ if __name__ == "__main__":
         os.makedirs(cache_dir)
     fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
 
-    if sys.argv[1:] == ['--fetch']:
+    if sys.argv[1:2] == ['--fetch']:
         if os.path.exists(fn):
             ar = tarfile.open(fn, 'r')
             ar.extractall(root_dir)
@@ -108,10 +114,10 @@ if __name__ == "__main__":
                 fetch_mathlib(asset)
             else:
                 print('no cache found')
-    elif sys.argv[1:] == ['--build']:
+    elif sys.argv[1:2] == ['--build']:
         os.system('leanpkg build')
         make_cache(fn)  # we make the cache even if the build failed
-    elif sys.argv[1:] == ['--build-all']:
+    elif sys.argv[1:2] == ['--build-all']:
         for b in repo.branches:
             print("Switching to branch " + b.name)
             try:
@@ -124,7 +130,7 @@ if __name__ == "__main__":
             fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
             os.system('leanpkg build')
             make_cache(fn) # we make the cache even if the build failed
-    elif sys.argv[1:] == ['--build-new']:
+    elif sys.argv[1:2] == ['--build-new']:
         for b in repo.branches:
             rev = b.commit.hexsha
             fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
@@ -140,7 +146,7 @@ if __name__ == "__main__":
                     continue
                 os.system('leanpkg build')
                 make_cache(fn) # we make the cache even if the build failed
-    elif sys.argv[1:] == []:
+    elif sys.argv[1:2] == []:
         make_cache(fn)
     else:
-        print('usage: cache-olean [--fetch | --build | --build-all | --build-new]')
+        print('usage: cache-olean [--fetch | --build | --build-all | --build-new] [--even-if-dirty]')
