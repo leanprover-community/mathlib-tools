@@ -80,9 +80,9 @@ def should_proceed_with_dirty_repo(action):
         return True
     if action == ['--fetch']:
         print('Your repo is dirty; fetching in this state could cause you to lose data. '\
-              'If you understand the risks, you can use --fetch-even-if-dirty.')
+              'To proceed regardless, use --fetch-even-if-dirty.')
     else:
-        print('Your repo is dirty; you must commit or discard your changes to perform this action.')
+        print('Your repo is dirty; commit or discard your changes to perform this action.')
     return False
 
 if __name__ == "__main__":
