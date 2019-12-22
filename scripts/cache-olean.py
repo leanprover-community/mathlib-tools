@@ -75,6 +75,15 @@ def fetch_mathlib(asset):
         ar.extractall('.')
         print("... successfully extracted olean archive.")
 
+def should_proceed_with_dirty_repo(action):
+    if action == ['--fetch-even-if-dirty']:
+        return True
+    if action == ['--fetch']:
+        print('Your repo is dirty; fetching in this state could cause you to lose data. '\
+              'If you understand the risks, you can use --fetch-even-if-dirty.')
+    else:
+        print('Your repo is dirty; you must commit or discard your changes to perform this action.')
+    return False
 
 if __name__ == "__main__":
     try:
@@ -88,8 +97,7 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     if repo.is_dirty():
-        if sys.argv[2:] != ['--even-if-dirty'] and\
-        input('Your repo is dirty. You may lose data if you proceed. Proceed? [N] ').lower() != 'y':
+        if not should_proceed_with_dirty_repo(sys.argv[1:]):
             sys.exit(-1)
         print('Warning: proceeding with dirty repo.')
 
@@ -102,7 +110,7 @@ if __name__ == "__main__":
         os.makedirs(cache_dir)
     fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
 
-    if sys.argv[1:2] == ['--fetch']:
+    if sys.argv[1:] == ['--fetch'] or sys.argv[1:] == ['--fetch-even-if-dirty']:
         if os.path.exists(fn):
             ar = tarfile.open(fn, 'r')
             ar.extractall(root_dir)
@@ -114,10 +122,10 @@ if __name__ == "__main__":
                 fetch_mathlib(asset)
             else:
                 print('no cache found')
-    elif sys.argv[1:2] == ['--build']:
+    elif sys.argv[1:] == ['--build']:
         os.system('leanpkg build')
         make_cache(fn)  # we make the cache even if the build failed
-    elif sys.argv[1:2] == ['--build-all']:
+    elif sys.argv[1:] == ['--build-all']:
         for b in repo.branches:
             print("Switching to branch " + b.name)
             try:
@@ -130,7 +138,7 @@ if __name__ == "__main__":
             fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
             os.system('leanpkg build')
             make_cache(fn) # we make the cache even if the build failed
-    elif sys.argv[1:2] == ['--build-new']:
+    elif sys.argv[1:] == ['--build-new']:
         for b in repo.branches:
             rev = b.commit.hexsha
             fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
@@ -146,7 +154,7 @@ if __name__ == "__main__":
                     continue
                 os.system('leanpkg build')
                 make_cache(fn) # we make the cache even if the build failed
-    elif sys.argv[1:2] == []:
+    elif sys.argv[1:] == []:
         make_cache(fn)
     else:
-        print('usage: cache-olean [--fetch | --build | --build-all | --build-new] [--even-if-dirty]')
+        print('usage: cache-olean [--fetch | --fetch-even-if-dirty | --build | --build-all | --build-new]')
