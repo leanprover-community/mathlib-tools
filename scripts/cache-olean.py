@@ -75,6 +75,15 @@ def fetch_mathlib(asset):
         ar.extractall('.')
         print("... successfully extracted olean archive.")
 
+def should_proceed_with_dirty_repo(action):
+    if action == ['--fetch-even-if-dirty']:
+        return True
+    if action == ['--fetch']:
+        print('Your repo is dirty; fetching in this state could cause you to lose data. '\
+              'To proceed regardless, use --fetch-even-if-dirty.')
+    else:
+        print('Your repo is dirty; commit or discard your changes to perform this action.')
+    return False
 
 if __name__ == "__main__":
     try:
@@ -87,6 +96,11 @@ if __name__ == "__main__":
         print('Repository not initialized')
         sys.exit(-1)
 
+    if repo.is_dirty():
+        if not should_proceed_with_dirty_repo(sys.argv[1:]):
+            sys.exit(-1)
+        print('Warning: proceeding with dirty repo.')
+
     root_dir = repo.working_tree_dir
     os.chdir(root_dir)
     rev = repo.commit().hexsha
@@ -96,7 +110,7 @@ if __name__ == "__main__":
         os.makedirs(cache_dir)
     fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
 
-    if sys.argv[1:] == ['--fetch']:
+    if sys.argv[1:] == ['--fetch'] or sys.argv[1:] == ['--fetch-even-if-dirty']:
         if os.path.exists(fn):
             ar = tarfile.open(fn, 'r')
             ar.extractall(root_dir)
@@ -143,4 +157,4 @@ if __name__ == "__main__":
     elif sys.argv[1:] == []:
         make_cache(fn)
     else:
-        print('usage: cache-olean [--fetch | --build | --build-all | --build-new]')
+        print('usage: cache-olean [--fetch | --fetch-even-if-dirty | --build | --build-all | --build-new]')
