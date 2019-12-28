@@ -46,6 +46,6 @@ if git_url not in ['https://github.com/leanprover/mathlib',
 asset = mathlib_asset(rev)
 # Get archive if needed
 if asset:
-    fetch_mathlib(asset)
+    fetch_mathlib(asset, target='_target/deps/mathlib')
 else:
     print('no cache found')

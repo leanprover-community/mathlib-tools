@@ -31,7 +31,7 @@ def mathlib_asset(rev):
     return asset
 
 
-def fetch_mathlib(asset):
+def fetch_mathlib(asset, target='.'):
     mathlib_dir = os.path.join(os.environ['HOME'], '.mathlib')
     if not os.path.isdir(mathlib_dir):
         os.mkdir(mathlib_dir)
@@ -53,5 +53,5 @@ def fetch_mathlib(asset):
 
     with DelayedInterrupt([signal.SIGTERM, signal.SIGINT]):
         ar = tarfile.open(os.path.join(mathlib_dir, asset.name))
-        ar.extractall('.')
+        ar.extractall(target)
         print("... successfully extracted olean archive.")
