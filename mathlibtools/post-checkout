@@ -1,5 +1,4 @@
 #!/bin/sh
-export PATH=$HOME/.mathlib/bin:$PATH
 # SourceTree on OS X provides a defective path that doesn't contain pythong
 # https://jira.atlassian.com/browse/SRCTREE-6540
 export PATH=$PATH:/usr/local/bin
