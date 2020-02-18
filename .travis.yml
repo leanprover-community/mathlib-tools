@@ -77,8 +77,8 @@ jobs:
         - osx
       script:
         - cp scripts/leanpkg-example.toml leanpkg.toml
-        - cd scripts
         - pip3 install .
+        - cd scripts
         - update-mathlib
         - cache-olean
         - cache-olean --fetch
