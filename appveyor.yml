@@ -33,7 +33,6 @@ test_script:
     - sh -c "source $HOME/.profile; update-mathlib"
     - sh -c "source $HOME/.profile; yes | setup-lean-git-hooks"
     - sh -c "source $HOME/.profile; cache-olean"
-    - sh -c "rm $HOME/.profile"
 
     - sh -c "pip3 install ."
     - sh -c "source $HOME/.profile; update-mathlib"
