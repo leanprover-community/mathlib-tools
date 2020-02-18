@@ -23,26 +23,25 @@ test_script:
     - "python --version"
     - cp scripts/leanpkg-example.toml leanpkg.toml
     - sh -c "ln -s `which python` `which python`3"
-    - sh scripts/remote-install-update-mathlib.sh --branch=%APPVEYOR_REPO_BRANCH%
+    - sh -c "pip3 install ."
     - sh -c "source $HOME/.profile; update-mathlib"
     - sh -c "source $HOME/.profile; yes | setup-lean-git-hooks"
     - sh -c "source $HOME/.profile; cache-olean"
 
     # what if it's already installed?
-    - sh -c "scripts/remote-install-update-mathlib.sh --branch=%APPVEYOR_REPO_BRANCH%"
+    - sh -c "pip3 install ."
     - sh -c "source $HOME/.profile; update-mathlib"
     - sh -c "source $HOME/.profile; yes | setup-lean-git-hooks"
     - sh -c "source $HOME/.profile; cache-olean"
-    - sh -c "rm -rf $HOME/.mathlib"
     - sh -c "rm $HOME/.profile"
 
-    - sh -c "cd scripts; yes | bash setup-dev-scripts.sh"
+    - sh -c "pip3 install ."
     - sh -c "source $HOME/.profile; update-mathlib"
     - sh -c "source $HOME/.profile; cache-olean"
     - sh -c "source $HOME/.profile; cache-olean --fetch"
     - sh -c "source $HOME/.profile; yes | setup-lean-git-hooks"
     # do it again
-    - sh -c "cd scripts; yes | sh setup-dev-scripts.sh"
+    - sh -c "pip3 install ."
     - sh -c "source $HOME/.profile; update-mathlib"
     - sh -c "source $HOME/.profile; cache-olean"
     - sh -c "source $HOME/.profile; cache-olean --fetch"
