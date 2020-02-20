@@ -6,7 +6,7 @@
 This package contains several supporting tools for [Lean mathlib](https://leanprover-community.github.io/).
 
   - `update-mathlib` fetches precompiled olean files if you use mathlib as a dependency
-  - `cache-olean` fetches precompiled olean files if you're working on mathlib
+  - `cache-olean` caches olean files, and if you're working on mathlib it can also fetch precompiled olean files from github
   - `setup-lean-git-hooks` automates the usage of `cache-olean` using git hooks
 
 See also [the documentation in the mathlib repository](https://github.com/leanprover-community/mathlib/blob/8700aa7d78b10b65cf8db1d9e320872ae313517a/docs/contribute/index.md).
