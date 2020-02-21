@@ -4,48 +4,57 @@ import os.path
 import os
 import sys
 import toml
+import argparse
 
-from mathlibtools.fetching import mathlib_asset, fetch_mathlib
+from mathlibtools.fetching import mathlib_asset_from_azure, mathlib_asset_from_url, fetch_mathlib
 
-# find root of project and leanpkg.toml
-cwd = os.getcwd()
-while not os.path.isfile('leanpkg.toml') and os.getcwd() != '/':
-    os.chdir(os.path.dirname(os.getcwd()))
+def get_rev_from_toml():
+    # find root of project and leanpkg.toml
+    while not os.path.isfile('leanpkg.toml') and os.getcwd() != '/':
+        os.chdir(os.path.dirname(os.getcwd()))
 
-# parse leanpkg.toml
-try:
-    leanpkg = toml.load('leanpkg.toml')
-except FileNotFoundError:
-    print('Error: No leanpkg.toml found')
-    sys.exit(1)
+    # parse leanpkg.toml
+    try:
+        leanpkg = toml.load('leanpkg.toml')
+    except FileNotFoundError:
+        print('Error: No leanpkg.toml found')
+        sys.exit(1)
 
-try:
-    lib = leanpkg['dependencies']['mathlib']
-except KeyError:
-    print('Error: Project does not depend on mathlib')
-    sys.exit(1)
+    try:
+        lib = leanpkg['dependencies']['mathlib']
+    except KeyError:
+        print('Error: Project does not depend on mathlib')
+        sys.exit(1)
 
-try:
-    git_url = lib['git']
-    rev = lib['rev']
-except KeyError:
-    print('Error: Project seems to refer to a local copy of mathlib '
-          'instead of a GitHub repository')
-    sys.exit(1)
+    try:
+    #    git_url = lib['git']
+        rev = lib['rev']
+    except KeyError:
+        print('Error: Project seems to refer to a local copy of mathlib '
+            'instead of a GitHub repository')
+        sys.exit(1)
+    return rev
 
-# some leanpkg files might contain urls ending in '/'
-git_url = git_url.rstrip('/')
+# it shouldn't matter anymore where the mathlib is coming from
+## some leanpkg files might contain urls ending in '/'
+# git_url = git_url.rstrip('/')
+#
+# if git_url not in ['https://github.com/leanprover/mathlib',
+#                    'git@github.com:leanprover/mathlib.git',
+#                    'https://github.com/leanprover-community/mathlib',
+#                    'git@github.com:leanprover-community/mathlib.git']:
+#     print('Error: mathlib reference', git_url, 'seems to be a fork')
+#     sys.exit(1)
 
-if git_url not in ['https://github.com/leanprover/mathlib',
-                   'git@github.com:leanprover/mathlib.git',
-                   'https://github.com/leanprover-community/mathlib',
-                   'git@github.com:leanprover-community/mathlib.git']:
-    print('Error: mathlib reference', git_url, 'seems to be a fork')
-    sys.exit(1)
+parser = argparse.ArgumentParser(description='Fetch .olean files for a mathlib dependency.')
+parser.add_argument('--from-url', dest='url', default=None,
+                    help='a url to a tar.gz archive containing olean files (default from mathlib server)')
+args = parser.parse_args()
 
-asset = mathlib_asset(rev)
+asset_name, asset_url = mathlib_asset_from_url(args.url) if args.url else mathlib_asset_from_azure(get_rev_from_toml())
+
 # Get archive if needed
-if asset:
-    fetch_mathlib(asset, target='_target/deps/mathlib')
+if asset_name:
+    fetch_mathlib(asset_name, asset_url, target='_target/deps/mathlib')
 else:
     print('no cache found')

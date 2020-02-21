@@ -7,7 +7,7 @@ import signal
 from git import Repo, InvalidGitRepositoryError
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
-from mathlibtools.fetching import mathlib_asset, fetch_mathlib
+from mathlibtools.fetching import mathlib_asset_from_azure, fetch_mathlib
 
 
 def make_cache(fn):
@@ -64,9 +64,9 @@ if __name__ == "__main__":
             ar.close()
             print('... successfully fetched local cache.')
         else:
-            asset = mathlib_asset(rev)
-            if asset:
-                fetch_mathlib(asset)
+            asset_name, asset_url = mathlib_asset_from_azure(rev)
+            if asset_name:
+                fetch_mathlib(asset_name, asset_url)
             else:
                 print('no cache found')
     elif sys.argv[1:] == ['--build']:
