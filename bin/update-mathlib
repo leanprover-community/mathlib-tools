@@ -6,7 +6,7 @@ import sys
 import toml
 import argparse
 
-from mathlibtools.fetching import mathlib_asset_from_azure, mathlib_asset_from_url, fetch_mathlib
+from mathlibtools.fetching import mathlib_asset_from_azure_or_nightly, mathlib_asset_from_url, fetch_mathlib
 
 def get_rev_from_toml():
     # find root of project and leanpkg.toml
@@ -51,7 +51,7 @@ parser.add_argument('--from-url', dest='url', default=None,
                     help='a url to a tar.gz archive containing olean files (default from mathlib server)')
 args = parser.parse_args()
 
-asset_name, asset_url = mathlib_asset_from_url(args.url) if args.url else mathlib_asset_from_azure(get_rev_from_toml())
+asset_name, asset_url = mathlib_asset_from_url(args.url) if args.url else mathlib_asset_from_azure_or_nightly(get_rev_from_toml)
 
 # Get archive if needed
 if asset_name:

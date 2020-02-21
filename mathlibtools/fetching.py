@@ -8,6 +8,11 @@ import signal
 from mathlibtools.auth_github import auth_github
 from mathlibtools.delayed_interrupt import DelayedInterrupt
 
+
+# this should check if a file exists at url without actually downloading it
+def archive_exists_at_url(url):
+    return False
+
 def mathlib_asset_from_gh_nightly(rev):
     g = auth_github()
     print("Querying GitHub...")
@@ -35,9 +40,16 @@ def mathlib_asset_from_azure(rev):
     name = '{}.tar.gz'.format(rev)
     return name, 'https://oleanstorage.blob.core.windows.net/mathlib/' + name
 
+# finds the asset at azure, if it exists, otherwise from the nightlies
+def mathlib_asset_from_azure_or_nightly(rev):
+    name, url = mathlib_asset_from_azure(rev)
+    if not archive_exists_at_url(url):
+        name, url = mathlib_asset_from_gh_nightly(rev)
+    return name, url
+
 # url: a url pointing to a tar.gz file
 def mathlib_asset_from_url(url):
-    return url.split('/')[-1], url
+    return url.split('/')[-1], url if archive_exists_at_url(url) else None, None
 
 def fetch_mathlib(asset_name, asset_url, target='.'):
     mathlib_dir = os.path.join(os.environ['HOME'], '.mathlib')
