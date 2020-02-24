@@ -4,3 +4,9 @@
 _cache
 __pycache__
 *.pyc
+*.mypy_cache
+.python-version
+.tox
+build
+dist
+*.egg-info
