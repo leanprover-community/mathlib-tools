@@ -41,7 +41,7 @@ def cli():
 def new(path: str = '.'):
     """Create a new Lean project and prepare mathlib.
 
-    If no directory name is given, the current directory is use.
+    If no directory name is given, the current directory is used.
     """
     LeanProject.new(Path(path))
 
@@ -71,7 +71,7 @@ def build():
 @click.argument('url')
 @click.argument('target', default='')
 def get_project(url: str, target: str = ''):
-    """Get a project from a GitHub name or git url, 
+    """Clone a project from a GitHub name or git url, 
        put it in target if specified.
        A GitHub name without / will be considered as
        a leanprover-community project."""
@@ -130,5 +130,4 @@ def hooks():
     except Exception as err:
         log.error(err)
         sys.exit(-1)
-
 
