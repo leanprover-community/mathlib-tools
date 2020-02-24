@@ -65,7 +65,7 @@ AZURE_URL = 'https://oleanstorage.blob.core.windows.net/mathlib/'
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
 
 def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
-    """Creates, as target, a tar.bz2 archive containind all paths from src,
+    """Creates, as target, a tar.bz2 archive containing all paths from src,
     relative to the folder root"""
     try:
         target.unlink()
@@ -285,7 +285,7 @@ class LeanProject:
         return proj
 
     def run(self, args: List[str]) -> None:
-        """Run a command it the project directory.
+        """Run a command in the project directory.
            
            args is a list as in subprocess.run"""
         subprocess.run(args, cwd=str(self.directory))
