@@ -1,7 +1,8 @@
 # mathlib-tools
 
-[![Build Status](https://travis-ci.org/leanprover-community/mathlib-tools.svg?branch=master)](https://travis-ci.org/leanprover-community/mathlib-tools)
-[![Build status](https://ci.appveyor.com/api/projects/status/t353pkb62tep1rth?svg=true)](https://ci.appveyor.com/project/cipher1024/mathlib-tools)
+![Test on Linux](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20Linux/badge.svg)
+![Test on MacOS](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20MacOS/badge.svg)
+![Test on Windows](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20Windows/badge.svg)
 
 This package contains `leanproject`, a supporting tool for [Lean mathlib](https://leanprover-community.github.io/).
 
