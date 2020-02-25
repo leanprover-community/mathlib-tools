@@ -60,7 +60,7 @@ def nightly_url(rev: str) -> str:
 
 
 DOT_MATHLIB = Path.home()/'.mathlib'
-AZURE_URL = 'https://oleanstorage.blob.core.windows.net/mathlib/'
+AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
 
