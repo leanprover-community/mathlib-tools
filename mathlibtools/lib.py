@@ -63,6 +63,18 @@ DOT_MATHLIB = Path.home()/'.mathlib'
 AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
+DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
+
+def set_download_url(url: str = AZURE_URL) -> None:
+    """Store the download url in .mathlib."""
+    DOWNLOAD_URL_FILE.write_text(url)
+
+def get_download_url() -> str:
+    """Get the download url from .mathlib."""
+    return DOWNLOAD_URL_FILE.read_text().strip('/\n')+'/'
+
+if not DOWNLOAD_URL_FILE.exists():
+    set_download_url()
 
 def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
     """Creates, as target, a tar.bz2 archive containing all paths from src,
@@ -101,7 +113,7 @@ def download(url: str, target: Path) -> None:
                                 'status code was ' + str(req.status_code))
 
 
-def get_mathlib_archive(rev: str) -> Path:
+def get_mathlib_archive(rev: str, url:str = '') -> Path:
     """Download a mathlib archive for revision rev into .mathlib
 
     Return the archive Path. Will raise LeanDownloadError if nothing works.
@@ -113,10 +125,11 @@ def get_mathlib_archive(rev: str) -> Path:
     if path.exists():
         log.info('Found local mathlib oleans')
         return path
-    log.info('Looking for Azure mathlib oleans')
+    log.info('Looking for remote mathlib oleans')
     try:
-        download(AZURE_URL+fname, path)
-        log.info('Found Azure mathlib oleans')
+        base_url = url or get_download_url()
+        download(base_url+fname, path)
+        log.info('Found mathlib oleans at '+base_url)
         return path
     except LeanDownloadError:
         pass
@@ -219,10 +232,10 @@ class LeanProject:
                 nval = str(val).replace(':', '=')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
-    def get_mathlib_olean(self) -> None:
+    def get_mathlib_olean(self, url:str = '') -> None:
         """Get precompiled mathlib oleans for this project."""
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(get_mathlib_archive(self.mathlib_rev), 
+        unpack_archive(get_mathlib_archive(self.mathlib_rev, url), 
                        self.mathlib_folder)
         # Let's now touch oleans, just in case
         now = datetime.now().timestamp()
@@ -244,7 +257,7 @@ class LeanProject:
         pack(self.directory, filter(Path.exists, [self.directory/'src', self.directory/'test']), 
              archive)
 
-    def get_cache(self, force: bool = False) -> None:
+    def get_cache(self, force: bool = False, url:str = '') -> None:
         """Tries to get olean cache.
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
@@ -252,24 +265,24 @@ class LeanProject:
         if self.is_dirty and not force:
             raise LeanDirtyRepo
         if self.is_mathlib:
-            self.get_mathlib_olean()
+            self.get_mathlib_olean(url)
         else:
             unpack_archive(self.directory/'_cache'/(str(self.rev)+'.tar.bz2'),
                            self.directory)
 
     @classmethod
-    def from_git_url(cls, url: str, target: str = '') -> 'LeanProject':
+    def from_git_url(cls, url: str, target: str = '', cache_url: str = '') -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         target = target or url.split('/')[-1].split('.')[0]
         repo = Repo.clone_from(url, target)
         proj = cls.from_path(Path(repo.working_dir))
         proj.run(['leanpkg', 'configure'])
         if 'mathlib' in proj.deps:
-            proj.get_mathlib_olean()
+            proj.get_mathlib_olean(cache_url)
         return proj
     
     @classmethod
-    def new(cls, path: Path = Path('.')) -> 'LeanProject':
+    def new(cls, path: Path = Path('.'), url: str = '') -> 'LeanProject':
         """Create a new Lean project and prepare mathlib."""
         if path == Path('.'):
             subprocess.run(['leanpkg', 'init', path.absolute().name])
@@ -281,7 +294,7 @@ class LeanProject:
         if re.match(r'^3.[5-9].*', proj.lean_version):
             proj.lean_version = 'leanprover-community/lean:' + proj.lean_version
             proj.write_config()
-        proj.add_mathlib()
+        proj.add_mathlib(url)
         return proj
 
     def run(self, args: List[str]) -> None:
@@ -294,7 +307,7 @@ class LeanProject:
         log.info('Building project '+self.name)
         self.run(['leanpkg', 'build'])
 
-    def upgrade_mathlib(self) -> None:
+    def upgrade_mathlib(self, url: str = '') -> None:
         """Upgrade mathlib in the project.
 
         In case this project is mathlib, we assume we are already on the branch
@@ -308,7 +321,7 @@ class LeanProject:
             except StopIteration:
                 log.info("Couldn't find a relevant git remote. "
                          "You may try to git pull manually and then "
-                         "run `leanproject get-cache`”)
+                         "run `leanproject get-cache`")
                 return
             rem.pull(self.repo.active_branch)
             self.rev = self.repo.commit().hexsha
@@ -318,9 +331,9 @@ class LeanProject:
             except FileNotFoundError:
                 pass
             self.run(['leanpkg', 'upgrade'])
-        self.get_mathlib_olean()
+        self.get_mathlib_olean(url)
 
-    def add_mathlib(self) -> None:
+    def add_mathlib(self, url:str = '') -> None:
         """Add mathlib to the project."""
         if 'mathlib' in self.deps:
             log.info('This project already depends on  mathlib')
@@ -330,7 +343,7 @@ class LeanProject:
         log.debug('Configuring') 
         self.run(['leanpkg', 'configure'])
         self.read_config()
-        self.get_mathlib_olean()
+        self.get_mathlib_olean(url)
 
     def setup_git_hooks(self) -> None:
         hook_dir = Path(self.repo.git_dir)/'hooks'
