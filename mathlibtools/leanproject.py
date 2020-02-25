@@ -69,12 +69,13 @@ def build():
 
 @cli.command(name='get')
 @click.argument('url')
-@click.argument('target', default='')
+@click.argument('dir', default='')
 def get_project(url: str, target: str = ''):
-    """Clone a project from a GitHub name or git url, 
-       put it in target if specified.
-       A GitHub name without / will be considered as
-       a leanprover-community project."""
+    """Clone a project from a GitHub name or git url.
+    
+    Put it in dir if this argument is given.
+    A GitHub name without / will be considered as
+    a leanprover-community project."""
     if not url.startswith(('git@', 'http')):
         if '/' not in url:
             url = 'leanprover-community/'+url
