@@ -308,7 +308,7 @@ class LeanProject:
             except StopIteration:
                 log.info("Couldn't find a relevant git remote. "
                          "You may try to git pull manually and then "
-                         "get the olean cache")
+                         "run `leanproject get-cache`”)
                 return
             rem.pull(self.repo.active_branch)
             self.rev = self.repo.commit().hexsha
