@@ -30,20 +30,24 @@ class CustomMultiCommand(click.Group):
         return decorator
 
 def proj():
-    return LeanProject.from_path(Path('.'))
+    return LeanProject.from_path(Path('.'), cache_url, force_download)
 
-# The following is a global state variable. This is a lazy way of propagating
-# the global url option.
-url = ''
+# The following are global state variables. This is a lazy way of propagating
+# the global options.
+cache_url = ''
+force_download = False
 
 @click.group(cls=CustomMultiCommand, context_settings={ 'help_option_names':['-h', '--help']})
-@click.option('--from-url', '-u', default='',
+@click.option('--from-url', '-u', default='', nargs=1,
               help='Override base url for olean cache.')
-def cli(from_url):
+@click.option('--force-download', '-f', 'force', default=False, is_flag=True,
+              help='Download olean cache without looking for a local version.')
+def cli(from_url, force):
     """Command line client to manage Lean projects depending on mathlib.
     Use leanproject COMMAND --help to get more help on any specific command."""
-    global url 
-    url = from_url
+    global cache_url, force_download
+    cache_url = from_url
+    force_download = force
 
 @cli.command()
 @click.argument('path', default='.')
@@ -52,18 +56,18 @@ def new(path: str = '.'):
 
     If no directory name is given, the current directory is used.
     """
-    LeanProject.new(Path(path), url)
+    LeanProject.new(Path(path), cache_url, force_download)
 
 @cli.command()
 def add_mathlib():
     """Add mathlib to the current project."""
-    proj().add_mathlib(url)
+    proj().add_mathlib()
 
 @cli.command(['upgrade-mathlib', 'update-mathlib', 'up'])
 def upgrade_mathlib():
     """Upgrade mathlib (as a dependency or as the main project)."""
     try:
-        proj().upgrade_mathlib(url)
+        proj().upgrade_mathlib()
     except LeanDownloadError:
         log.error('Failed to fetch mathlib oleans')
         sys.exit(-1)
@@ -87,10 +91,10 @@ def get_project(name: str, target: str = ''):
     a leanprover-community project."""
     if not name.startswith(('git@', 'http')):
         if '/' not in name:
-            name = 'leanprover-community/'+url
-        name = 'https://github.com/'+url+'.git'
+            name = 'leanprover-community/'+name
+        name = 'https://github.com/'+name+'.git'
     try:
-        LeanProject.from_git_url(name, target, url)
+        LeanProject.from_git_url(name, target, cache_url, force_download)
     except GitCommandError:
         log.error('Git command failed')
         sys.exit(-1)
@@ -120,7 +124,7 @@ def mk_cache(force: bool = False):
 def get_cache(force: bool = False):
     """Restore cached olean files."""
     try:
-        proj().get_cache(force, url)
+        proj().get_cache(force)
     except LeanDirtyRepo:
         log.error('The repository is dirty, please commit changes before '
                   'fetching cache, or run this command with option --force.')
