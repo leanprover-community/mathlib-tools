@@ -117,7 +117,7 @@ def download(url: str, target: Path) -> None:
         raise LeanDownloadError('Failed to download ' + url)
 
 
-def get_mathlib_archive(rev: str, url:str = '') -> Path:
+def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
 
     Return the archive Path. Will raise LeanDownloadError if nothing works.
@@ -125,10 +125,11 @@ def get_mathlib_archive(rev: str, url:str = '') -> Path:
 
     fname = rev + '.tar.gz'
     path = DOT_MATHLIB/fname
-    log.info('Looking for local mathlib oleans')
-    if path.exists():
-        log.info('Found local mathlib oleans')
-        return path
+    if not force:
+        log.info('Looking for local mathlib oleans')
+        if path.exists():
+            log.info('Found local mathlib oleans')
+            return path
     log.info('Looking for remote mathlib oleans')
     try:
         base_url = url or get_download_url()
@@ -145,7 +146,8 @@ def get_mathlib_archive(rev: str, url:str = '') -> Path:
 
 class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
-            pkg_config: dict, deps: dict) -> None:
+            pkg_config: dict, deps: dict,
+            cache_url: str = '', force_download: bool = False) -> None:
         """A Lean project."""
         self.repo = repo
         self.is_dirty = is_dirty
@@ -153,9 +155,12 @@ class LeanProject:
         self.directory = directory
         self.pkg_config = pkg_config
         self.deps = deps
+        self.cache_url = cache_url or get_download_url()
+        self.force_download = force_download
 
     @classmethod
-    def from_path(cls, path: Path) -> 'LeanProject':
+    def from_path(cls, path: Path, cache_url: str = '',
+                  force_download: bool = False) -> 'LeanProject':
         """Builds a LeanProject from a Path object"""
         try:
             repo = Repo(path, search_parent_directories=True)
@@ -175,7 +180,8 @@ class LeanProject:
             raise InvalidLeanProject('Missing leanpkg.toml')
 
         return cls(repo, is_dirty, rev, directory,
-                   config['package'], config['dependencies'])
+                   config['package'], config['dependencies'],
+                   cache_url, force_download)
 
     @property
     def name(self) -> str:
@@ -236,10 +242,11 @@ class LeanProject:
                 nval = str(val).replace(':', '=')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
-    def get_mathlib_olean(self, url:str = '') -> None:
+    def get_mathlib_olean(self) -> None:
         """Get precompiled mathlib oleans for this project."""
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(get_mathlib_archive(self.mathlib_rev, url), 
+        unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
+                                           self.force_download), 
                        self.mathlib_folder)
         # Let's now touch oleans, just in case
         now = datetime.now().timestamp()
@@ -269,36 +276,38 @@ class LeanProject:
         if self.is_dirty and not force:
             raise LeanDirtyRepo
         if self.is_mathlib:
-            self.get_mathlib_olean(url)
+            self.get_mathlib_olean()
         else:
             unpack_archive(self.directory/'_cache'/(str(self.rev)+'.tar.bz2'),
                            self.directory)
 
     @classmethod
-    def from_git_url(cls, url: str, target: str = '', cache_url: str = '') -> 'LeanProject':
+    def from_git_url(cls, url: str, target: str = '', cache_url: str = '',
+                     force_download: bool = False) -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         target = target or url.split('/')[-1].split('.')[0]
         repo = Repo.clone_from(url, target)
-        proj = cls.from_path(Path(repo.working_dir))
+        proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
         proj.run(['leanpkg', 'configure'])
         if 'mathlib' in proj.deps:
-            proj.get_mathlib_olean(cache_url)
+            proj.get_mathlib_olean()
         return proj
     
     @classmethod
-    def new(cls, path: Path = Path('.'), url: str = '') -> 'LeanProject':
+    def new(cls, path: Path = Path('.'), cache_url: str = '',
+            force_download: bool = False) -> 'LeanProject':
         """Create a new Lean project and prepare mathlib."""
         if path == Path('.'):
             subprocess.run(['leanpkg', 'init', path.absolute().name])
         else:
             subprocess.run(['leanpkg', 'new', str(path)])
 
-        proj = cls.from_path(path)
+        proj = cls.from_path(path, cache_url, force_download)
         # Work around a leanpkg bug
         if re.match(r'^3.[5-9].*', proj.lean_version):
             proj.lean_version = 'leanprover-community/lean:' + proj.lean_version
             proj.write_config()
-        proj.add_mathlib(url)
+        proj.add_mathlib()
         return proj
 
     def run(self, args: List[str]) -> None:
@@ -311,7 +320,7 @@ class LeanProject:
         log.info('Building project '+self.name)
         self.run(['leanpkg', 'build'])
 
-    def upgrade_mathlib(self, url: str = '') -> None:
+    def upgrade_mathlib(self) -> None:
         """Upgrade mathlib in the project.
 
         In case this project is mathlib, we assume we are already on the branch
@@ -335,9 +344,9 @@ class LeanProject:
             except FileNotFoundError:
                 pass
             self.run(['leanpkg', 'upgrade'])
-        self.get_mathlib_olean(url)
+        self.get_mathlib_olean()
 
-    def add_mathlib(self, url:str = '') -> None:
+    def add_mathlib(self) -> None:
         """Add mathlib to the project."""
         if 'mathlib' in self.deps:
             log.info('This project already depends on  mathlib')
@@ -347,7 +356,7 @@ class LeanProject:
         log.debug('Configuring') 
         self.run(['leanpkg', 'configure'])
         self.read_config()
-        self.get_mathlib_olean(url)
+        self.get_mathlib_olean()
 
     def setup_git_hooks(self) -> None:
         hook_dir = Path(self.repo.git_dir)/'hooks'
