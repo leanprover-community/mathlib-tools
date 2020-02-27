@@ -9,6 +9,6 @@ buildPythonApplication {
   doCheck = false;
 
   propagatedBuildInputs = [
-    PyGithub GitPython toml click
+    PyGithub GitPython toml click tqdm
   ];
 }
