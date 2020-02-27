@@ -150,3 +150,19 @@ def hooks():
 def set_url(url: str):
     """Set the default url where oleans should be fetched."""
     set_download_url(url)
+
+@cli.command()
+def check():
+    """Check mathlib oleans are more recent than their sources"""
+    try:
+        project = proj()
+        if project.check_timestamps():
+            log.info('Everything looks fine.')
+        else:
+            print('Some mathlib oleans files seem older than their source.')
+            touch = input('Do you want to set their modification time to now (y/n) ? ')
+            if touch.lower() in ['y', 'yes']:
+                project.touch_oleans()
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)

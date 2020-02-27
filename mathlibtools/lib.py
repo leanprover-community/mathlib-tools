@@ -249,9 +249,7 @@ class LeanProject:
                                            self.force_download), 
                        self.mathlib_folder)
         # Let's now touch oleans, just in case
-        now = datetime.now().timestamp()
-        for p in (self.mathlib_folder/'src').glob('**/*.olean'):
-            os.utime(str(p), (now, now))
+        self.touch_oleans()
 
     def mk_cache(self, force: bool = False) -> None:
         """Cache oleans for this project."""
@@ -369,3 +367,17 @@ class LeanProject:
             print("Successfully copied scripts")
         else:
                 print("Cancelled...")
+
+    def touch_oleans(self) -> None:
+        """Set modification time for mathlib oleans to now"""
+        now = datetime.now().timestamp()
+        for p in (self.mathlib_folder/'src').glob('**/*.olean'):
+            os.utime(str(p), (now, now))
+
+    def check_timestamps(self) -> bool:
+        """Check that mathlib oleans are more recent than their sources"""
+        try:
+            return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
+                   for p in (self.mathlib_folder/'src').glob('**/*.lean'))
+        except FileNotFoundError:
+            return False
