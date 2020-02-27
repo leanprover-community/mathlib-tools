@@ -23,5 +23,5 @@ setuptools.setup(
         "Operating System :: OS Independent" ],
     python_requires='>=3.5',
     install_requires=['toml', 'PyGithub', 'certifi', 'gitpython', 'requests',
-                      'Click']
+                      'Click', 'tqdm']
 )
