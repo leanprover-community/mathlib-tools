@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 import requests
 from tqdm import tqdm # type: ignore
 import toml
-from git import Repo, InvalidGitRepositoryError # type: ignore
+from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
 from mathlibtools.auth_github import auth_github
@@ -372,12 +372,12 @@ class LeanProject:
                 rem = next(remote for remote in self.repo.remotes 
                            if any('leanprover' in url 
                                   for url in remote.urls))
-            except StopIteration:
-                log.info("Couldn't find a relevant git remote. "
+                rem.pull(self.repo.active_branch)
+            except (StopIteration, GitCommandError):
+                log.info("Couldn't pull from a relevant git remote. "
                          "You may try to git pull manually and then "
                          "run `leanproject get-cache`")
                 return
-            rem.pull(self.repo.active_branch)
             self.rev = self.repo.commit().hexsha
         else:
             try:
