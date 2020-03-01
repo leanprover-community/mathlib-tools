@@ -132,7 +132,7 @@ def get_cache(force: bool = False):
         log.error('The repository is dirty, please commit changes before '
                   'fetching cache, or run this command with option --force.')
         sys.exit(-1)
-    except LeanDownloadError:
+    except (LeanDownloadError, FileNotFoundError):
         log.error('Failed to fetch mathlib oleans')
         sys.exit(-1)
     except Exception as err:

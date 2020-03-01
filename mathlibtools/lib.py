@@ -108,6 +108,8 @@ def download(url: str, target: Path) -> None:
         req = requests.get(url, stream=True)
     except ConnectionError:
         raise LeanDownloadError("Can't connect to " + url)
+    if req.headers['Content-Type'] != 'application/gzip':
+        raise LeanDownloadError('Failed to download ' + url)
     total_size = int(req.headers.get('content-length', 0))
     BLOCK_SIZE = 1024
     progress = tqdm(total=total_size, unit='iB', unit_scale=True)
