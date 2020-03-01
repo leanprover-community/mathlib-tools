@@ -71,6 +71,9 @@ def upgrade_mathlib():
     except LeanDownloadError:
         log.error('Failed to fetch mathlib oleans')
         sys.exit(-1)
+    except InvalidLeanProject:
+        project = LeanProject.user_wide(cache_url, force_download)
+        project.upgrade_mathlib()
     except Exception as err:
         log.error(err)
         sys.exit(-1)
@@ -163,6 +166,16 @@ def check():
             touch = input('Do you want to set their modification time to now (y/n) ? ')
             if touch.lower() in ['y', 'yes']:
                 project.touch_oleans()
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)
+
+@cli.command()
+def global_install():
+    """Install mathlib user-wide."""
+    try:
+        proj = LeanProject.user_wide(cache_url, force_download)
+        proj.add_mathlib()
     except Exception as err:
         log.error(err)
         sys.exit(-1)
