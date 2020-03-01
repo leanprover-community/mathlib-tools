@@ -106,9 +106,10 @@ def download(url: str, target: Path) -> None:
     log.info('Trying to download {} to {}'.format(url, target))
     try:
         req = requests.get(url, stream=True)
+        req.raise_for_status()
     except ConnectionError:
         raise LeanDownloadError("Can't connect to " + url)
-    if req.headers['Content-Type'] != 'application/gzip':
+    except requests.HTTPError:
         raise LeanDownloadError('Failed to download ' + url)
     total_size = int(req.headers.get('content-length', 0))
     BLOCK_SIZE = 1024
