@@ -1,5 +1,7 @@
 import sys
+import os
 from pathlib import Path
+from datetime import datetime
 
 from git.exc import GitCommandError # type: ignore
 import click
@@ -154,11 +156,25 @@ def set_url(url: str):
     """Set the default url where oleans should be fetched."""
     set_download_url(url)
 
+def check_core():
+    """Check that oleans are more recent than their source in core lib"""
+    now = datetime.now().timestamp()
+    for toolchain_path in (Path.home()/'.elan'/'toolchains').iterdir():
+        if any(p.stat().st_mtime > p.with_suffix('.olean').stat().st_mtime 
+               for p in toolchain_path.glob('**/*.lean')):
+            print('Some core oleans files in toolchain {} seem older than'
+                  'their source.'.format(str(toolchain_path)))
+            touch = input('Do you want to set their modification time to now (y/n) ? ')
+            if touch.lower() in ['y', 'yes']:
+                for p in toolchain_path.glob('**/*.olean'):
+                    os.utime(str(p), (now, now))
+
 @cli.command()
 def check():
     """Check mathlib oleans are more recent than their sources"""
     try:
         project = proj()
+        check_core()
         if project.check_timestamps():
             log.info('Everything looks fine.')
         else:
