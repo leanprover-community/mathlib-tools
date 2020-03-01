@@ -39,6 +39,9 @@ class LeanDownloadError(Exception):
 class LeanDirtyRepo(Exception):
     pass
 
+class InvalidLeanVersion(Exception):
+    pass
+
 def nightly_url(rev: str) -> str:
     """From a git rev, try to find an asset name and url."""
     g = auth_github()
@@ -143,6 +146,12 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     log.info('Found GitHub mathlib oleans')
     return path
 
+def parse_version(version):
+    """Turn the output of lean --version into a tuple of integers"""
+    m = re.match(r'.*version ([^,]*),.*', version)
+    if not m:
+        raise InvalidLeanVersion(version)
+    return tuple(map(int, m.group(1).split('.')))
 
 class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
@@ -180,6 +189,37 @@ class LeanProject:
             raise InvalidLeanProject('Missing leanpkg.toml')
 
         return cls(repo, is_dirty, rev, directory,
+                   config['package'], config['dependencies'],
+                   cache_url, force_download)
+    
+    @classmethod
+    def user_wide(cls, cache_url: str = '', 
+                  force_download: bool = False) -> 'LeanProject':
+        """Builds the user-wide LeanProject (living in ~/.lean) """
+        directory = Path.home()/'.lean'
+        try:
+            config = toml.load(directory/'leanpkg.toml')
+        except FileNotFoundError:
+            directory.mkdir(exist_ok=True)
+            proc = subprocess.run(['lean', '--version'], 
+                                  stdout=subprocess.PIPE,
+                                  universal_newlines=True,
+                                  cwd=str(Path.home()))
+            version = parse_version(proc.stdout)
+            if version <= (3, 4, 2):
+                version_str = '.'.join(map(str, version))
+            else:
+                version_str = 'leanprover-community/lean:' +\
+                              '.'.join(map(str, version))
+
+            pkg = { 'name': '_user_local_packages', 
+                    'version': '1',
+                    'lean_version': version_str }
+            with (directory/'leanpkg.toml').open('w') as pkgtoml:
+                toml.dump({'package': pkg}, pkgtoml)
+            config = { 'package': pkg, 'dependencies': dict() }
+
+        return cls(None, False, '', directory,
                    config['package'], config['dependencies'],
                    cache_url, force_download)
 
@@ -338,7 +378,7 @@ class LeanProject:
             self.rev = self.repo.commit().hexsha
         else:
             try:
-                self.mathlib_folder.unlink()
+                shutil.rmtree(str(self.mathlib_folder))
             except FileNotFoundError:
                 pass
             self.run(['leanpkg', 'upgrade'])
