@@ -8,7 +8,7 @@ import re
 import os
 import subprocess
 from datetime import datetime
-from typing import Iterable, Union, List
+from typing import Iterable, Union, List, Tuple
 from tempfile import TemporaryDirectory
 
 import requests
@@ -68,6 +68,22 @@ AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
 DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
+
+MATHLIB_URL = 'https://github.com/leanprover-community/mathlib.git'
+LEAN_VERSION_RE = re.compile(r'(.*)\t.*refs/heads/lean-(.*)')
+
+VersionTuple = Tuple[int, int, int]
+
+def mathlib_lean_version() -> VersionTuple:
+    """Return the latest Lean release supported by mathlib"""
+    out = subprocess.run(['git', 'ls-remote', '--heads', MATHLIB_URL],
+            stdout=subprocess.PIPE).stdout.decode()
+    version = (3, 4, 1)
+    for branch in out.split('\n'):
+        m = LEAN_VERSION_RE.match(branch)
+        if m:
+            version = max(version, parse_version(m.group(2)))
+    return version
 
 def set_download_url(url: str = AZURE_URL) -> None:
     """Store the download url in .mathlib."""
@@ -149,17 +165,39 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     log.info('Found GitHub mathlib oleans')
     return path
 
-def parse_version(version):
-    """Turn the output of lean --version into a tuple of integers"""
-    m = re.match(r'.*version ([^,]*),.*', version)
-    if not m:
-        raise InvalidLeanVersion(version)
-    return tuple(map(int, m.group(1).split('.')))
+def parse_version(version: str) -> VersionTuple:
+    """Turn a lean version string into a tuple of integers or raise
+    InvalidLeanVersion"""
+    #Something that could be in a branch name or modern leanpkg.toml
+    m = re.match(r'.*lean[-:](.*)\.(.*)\.(.*).*', version)
+    if m:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+
+    # The output of `lean -- version`
+    m = re.match(r'.*version (.*)\.(.*)\.(.*),.*', version)
+    if m:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+
+    # Only a version string
+    m = re.match(r'(.*)\.(.*)\.(.*)', version)
+    if m:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    raise InvalidLeanVersion(version)
+
+def lean_version_toml(version: VersionTuple) -> str:
+    """Turn a Lean version tuple into the string expected in leanpkg.toml."""
+    ver_str = '{:d}.{:d}.{:d}'.format(*version)
+    if version < (3, 5, 0):
+        return ver_str
+    else:
+        return 'leanprover-community/lean:' + ver_str
+    
 
 class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
             pkg_config: dict, deps: dict,
-            cache_url: str = '', force_download: bool = False) -> None:
+            cache_url: str = '', force_download: bool = False,
+            upgrade_lean: bool = True) -> None:
         """A Lean project."""
         self.repo = repo
         self.is_dirty = is_dirty
@@ -169,10 +207,12 @@ class LeanProject:
         self.deps = deps
         self.cache_url = cache_url or get_download_url()
         self.force_download = force_download
+        self.upgrade_lean = upgrade_lean
 
     @classmethod
     def from_path(cls, path: Path, cache_url: str = '',
-                  force_download: bool = False) -> 'LeanProject':
+                  force_download: bool = False, 
+                  upgrade_lean: bool = True) -> 'LeanProject':
         """Builds a LeanProject from a Path object"""
         try:
             repo = Repo(path, search_parent_directories=True)
@@ -193,22 +233,21 @@ class LeanProject:
 
         return cls(repo, is_dirty, rev, directory,
                    config['package'], config['dependencies'],
-                   cache_url, force_download)
+                   cache_url, force_download, upgrade_lean)
     
     @classmethod
     def user_wide(cls, cache_url: str = '', 
                   force_download: bool = False) -> 'LeanProject':
-        """Builds the user-wide LeanProject (living in ~/.lean) """
+        """Return the user-wide LeanProject (living in ~/.lean) 
+
+        If the project does not exist, it will be created, using the latest
+        version of Lean supported by mathlib."""
         directory = Path.home()/'.lean'
         try:
             config = toml.load(directory/'leanpkg.toml')
         except FileNotFoundError:
             directory.mkdir(exist_ok=True)
-            proc = subprocess.run(['lean', '--version'], 
-                                  stdout=subprocess.PIPE,
-                                  universal_newlines=True,
-                                  cwd=str(Path.home()))
-            version = parse_version(proc.stdout)
+            version = mathlib_lean_version()
             if version <= (3, 4, 2):
                 version_str = '.'.join(map(str, version))
             else:
@@ -231,12 +270,12 @@ class LeanProject:
         return self.pkg_config['name']
     
     @property
-    def lean_version(self) -> str:
-        return self.pkg_config['lean_version']
+    def lean_version(self) -> VersionTuple:
+        return parse_version(self.pkg_config['lean_version'])
 
     @lean_version.setter
-    def lean_version(self, value: str) -> None:
-        self.pkg_config['lean_version'] = value
+    def lean_version(self, version: VersionTuple) -> None:
+        self.pkg_config['lean_version'] = lean_version_toml(version)
 
 
     @property
@@ -275,6 +314,10 @@ class LeanProject:
 
     def write_config(self) -> None:
         """Write leanpkg.toml for this project."""
+        # Fix leanpkg lean_version bug if needed (the lean_version property
+        # setter is working here, hence the weird line).
+        self.lean_version = self.lean_version
+
         # Note we can't blindly use toml.dump because we need dict as values
         # for dependencies.
         with (self.directory/'leanpkg.toml').open('w') as cfg:
@@ -282,7 +325,8 @@ class LeanProject:
             cfg.write(toml.dumps(self.pkg_config))
             cfg.write('\n[dependencies]\n')
             for dep, val in self.deps.items():
-                nval = str(val).replace(':', '=')
+                nval = str(val).replace("'git':", 'git =').replace(
+                        "'rev':", 'rev =').replace("'", '"')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
     def get_mathlib_olean(self) -> None:
@@ -344,10 +388,7 @@ class LeanProject:
             subprocess.run(['leanpkg', 'new', str(path)])
 
         proj = cls.from_path(path, cache_url, force_download)
-        # Work around a leanpkg bug
-        if re.match(r'^3.[5-9].*', proj.lean_version):
-            proj.lean_version = 'leanprover-community/lean:' + proj.lean_version
-            proj.write_config()
+        proj.write_config()
         proj.add_mathlib()
         return proj
 
@@ -384,7 +425,14 @@ class LeanProject:
                 shutil.rmtree(str(self.mathlib_folder))
             except FileNotFoundError:
                 pass
+            if self.upgrade_lean:
+                mathlib_lean = mathlib_lean_version()
+
+                if mathlib_lean > self.lean_version:
+                    self.lean_version = mathlib_lean
+                    self.write_config()
             self.run(['leanpkg', 'upgrade'])
+            self.read_config()
         self.get_mathlib_olean()
 
     def add_mathlib(self) -> None:
