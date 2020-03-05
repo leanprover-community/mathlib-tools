@@ -32,24 +32,29 @@ class CustomMultiCommand(click.Group):
         return decorator
 
 def proj():
-    return LeanProject.from_path(Path('.'), cache_url, force_download)
+    return LeanProject.from_path(Path('.'), cache_url, force_download,
+                                 lean_upgrade)
 
 # The following are global state variables. This is a lazy way of propagating
 # the global options.
 cache_url = ''
 force_download = False
+lean_upgrade = True
 
 @click.group(cls=CustomMultiCommand, context_settings={ 'help_option_names':['-h', '--help']})
 @click.option('--from-url', '-u', default='', nargs=1,
               help='Override base url for olean cache.')
 @click.option('--force-download', '-f', 'force', default=False, is_flag=True,
               help='Download olean cache without looking for a local version.')
-def cli(from_url, force):
+@click.option('--no-lean-upgrade', 'noleanup', default=False, is_flag=True,
+              help='Do not upgrade Lean version when upgrading mathlib.')
+def cli(from_url, force, noleanup):
     """Command line client to manage Lean projects depending on mathlib.
     Use leanproject COMMAND --help to get more help on any specific command."""
-    global cache_url, force_download
+    global cache_url, force_download, lean_upgrade
     cache_url = from_url
     force_download = force
+    lean_upgrade = not noleanup
 
 @cli.command()
 @click.argument('path', default='.')
