@@ -1,13 +1,10 @@
 # mathlib-tools
 
-[![Build Status](https://travis-ci.org/leanprover-community/mathlib-tools.svg?branch=master)](https://travis-ci.org/leanprover-community/mathlib-tools)
-[![Build status](https://ci.appveyor.com/api/projects/status/t353pkb62tep1rth?svg=true)](https://ci.appveyor.com/project/cipher1024/mathlib-tools)
+![Test on Linux](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20Linux/badge.svg)
+![Test on MacOS](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20MacOS/badge.svg)
+![Test on Windows](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20Windows/badge.svg)
 
-This package contains several supporting tools for [Lean mathlib](https://leanprover-community.github.io/).
-
-  - `update-mathlib` fetches precompiled olean files if you use mathlib as a dependency
-  - `cache-olean` caches olean files, and if you're working on mathlib it can also fetch precompiled olean files from github
-  - `setup-lean-git-hooks` automates the usage of `cache-olean` using git hooks
+This package contains `leanproject`, a supporting tool for [Lean mathlib](https://leanprover-community.github.io/).
 
 See also [the documentation in the mathlib repository](https://github.com/leanprover-community/mathlib/blob/8700aa7d78b10b65cf8db1d9e320872ae313517a/docs/contribute/index.md).
 
