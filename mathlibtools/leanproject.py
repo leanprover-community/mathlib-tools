@@ -113,8 +113,17 @@ def get_project(name: str, directory: str = ''):
     a leanprover-community project."""
     if not name.startswith(('git@', 'http')):
         if '/' not in name:
+            target = name
             name = 'leanprover-community/'+name
+        else:
+            target = name.split('/')[1]
         name = 'https://github.com/'+name+'.git'
+    else:
+        target = name.split('/')[-1].replace('.git', '')
+    directory = directory or target
+    if directory and Path(directory).exists():
+        log.error(directory + ' already exists')
+        sys.exit(-1)
     try:
         LeanProject.from_git_url(name, directory, cache_url, force_download)
     except GitCommandError:
