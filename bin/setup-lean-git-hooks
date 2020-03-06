@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+import sys
+import shutil
+from pathlib import Path
+import mathlibtools
+from git import Repo
+
+
+repo = Repo('.', search_parent_directories=True)
+hook_dir = Path(repo.git_dir) / 'hooks'
+mathlib_dir = Path(mathlibtools.__file__).parent
+
+if hook_dir.exists():
+	print('This script will copy post-commit and post-checkout scripts to ', hook_dir)
+	rep = input("Do you want to proceed (y/n)? ")
+	if rep in ['y', 'Y']:
+	    shutil.copy(str(mathlib_dir/'post-commit'), str(hook_dir))
+	    shutil.copy(str(mathlib_dir/'post-checkout'), str(hook_dir))
+	    print("Successfully copied scripts")
+	else:
+		print("Cancelled...")
+else:
+    print('No git repo found')
+    sys.exit(-1)

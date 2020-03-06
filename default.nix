@@ -3,12 +3,10 @@
 with pkgs.python3Packages;
 buildPythonApplication {
   pname = "mathlib-tools";
-  version = "0.0.3";
+  version = "0.0.2";
   src = ./.;
 
-  doCheck = false;
-
   propagatedBuildInputs = [
-    PyGithub GitPython toml click tqdm
+    PyGithub GitPython toml
   ];
 }
