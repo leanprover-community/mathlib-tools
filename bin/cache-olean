@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+import os.path
+import os
+import sys
+import tarfile
+import signal
+from git import Repo, InvalidGitRepositoryError
+
+from mathlibtools.delayed_interrupt import DelayedInterrupt
+from mathlibtools.fetching import mathlib_asset, fetch_mathlib
+
+
+def make_cache(fn):
+    if os.path.exists(fn):
+        os.remove(fn)
+
+    with DelayedInterrupt([signal.SIGTERM, signal.SIGINT]):
+        ar = tarfile.open(fn, 'w|bz2')
+        if os.path.exists('src/'): ar.add('src/')
+        if os.path.exists('test/'): ar.add('test/')
+        ar.close()
+        print('... successfully made olean cache.')
+
+
+def should_proceed_with_dirty_repo(action):
+    if action == ['--fetch-even-if-dirty']:
+        return True
+    if action == ['--fetch']:
+        print('Your repo is dirty; fetching in this state could cause you to lose data. '\
+              'To proceed regardless, use --fetch-even-if-dirty.')
+    else:
+        print('Your repo is dirty; commit or discard your changes to perform this action.')
+    return False
+
+if __name__ == "__main__":
+    try:
+        repo = Repo('.', search_parent_directories=True)
+    except InvalidGitRepositoryError:
+        print('This does not seem to be a git repository.')
+        sys.exit(-1)
+
+    if repo.bare:
+        print('Repository not initialized')
+        sys.exit(-1)
+
+    if repo.is_dirty():
+        if not should_proceed_with_dirty_repo(sys.argv[1:]):
+            sys.exit(-1)
+        print('Warning: proceeding with dirty repo.')
+
+    root_dir = repo.working_tree_dir
+    os.chdir(root_dir)
+    rev = repo.commit().hexsha
+
+    cache_dir = os.path.join(root_dir, "_cache")
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
+
+    if sys.argv[1:] == ['--fetch'] or sys.argv[1:] == ['--fetch-even-if-dirty']:
+        if os.path.exists(fn):
+            ar = tarfile.open(fn, 'r')
+            ar.extractall(root_dir)
+            ar.close()
+            print('... successfully fetched local cache.')
+        else:
+            asset = mathlib_asset(rev)
+            if asset:
+                fetch_mathlib(asset)
+            else:
+                print('no cache found')
+    elif sys.argv[1:] == ['--build']:
+        os.system('leanpkg build')
+        make_cache(fn)  # we make the cache even if the build failed
+    elif sys.argv[1:] == ['--build-all']:
+        for b in repo.branches:
+            print("Switching to branch " + b.name)
+            try:
+                b.checkout()
+            except Exception as e:
+                print("Failed to switch branch:")
+                print(repr(e))
+                continue
+            rev = repo.commit().hexsha
+            fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
+            os.system('leanpkg build')
+            make_cache(fn) # we make the cache even if the build failed
+    elif sys.argv[1:] == ['--build-new']:
+        for b in repo.branches:
+            rev = b.commit.hexsha
+            fn = os.path.join(cache_dir, 'olean-' + rev + ".bz2")
+            if os.path.exists(fn):
+                print("Branch already built: " + b.name)
+            else:
+                print("Building branch: " + b.name)
+                try:
+                    b.checkout()
+                except Exception as e:
+                    print("Failed to switch branch:")
+                    print(repr(e))
+                    continue
+                os.system('leanpkg build')
+                make_cache(fn) # we make the cache even if the build failed
+    elif sys.argv[1:] == []:
+        make_cache(fn)
+    else:
+        print('usage: cache-olean [--fetch | --fetch-even-if-dirty | --build | --build-all | --build-new]')

@@ -1,5 +1,5 @@
 #!/bin/sh
-# SourceTree on OS X provides a defective path that doesn't contain python
+# SourceTree on OS X provides a defective path that doesn't contain pythong
 # https://jira.atlassian.com/browse/SRCTREE-6540
 export PATH=$PATH:/usr/local/bin
 
@@ -7,7 +7,7 @@ export PATH=$PATH:/usr/local/bin
 # if python3 isn't available, we don't generate an error; just a message
 if /usr/bin/env python3 -c ""; then
 	echo "Caching olean..."
-	leanproject mk-cache
+	cache-olean
 else
     echo "'env python3' failed; not running post-checkout hook"
 fi

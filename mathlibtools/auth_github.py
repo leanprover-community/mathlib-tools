@@ -1,5 +1,5 @@
-from git import Repo, InvalidGitRepositoryError # type: ignore
-from github import Github # type: ignore
+from git import Repo, InvalidGitRepositoryError
+from github import Github
 import configparser
 
 def auth_github():
