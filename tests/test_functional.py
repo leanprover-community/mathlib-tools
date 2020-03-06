@@ -65,3 +65,8 @@ def test_upgrade_mathlib(tmpdir):
     subprocess.run(['leanproject', 'upgrade-mathlib'])
     assert (tmpdir/'mathlib'/'src'/'algebra'/'default.olean').exists()
 
+def test_get_tutorials(tmpdir):
+    chdir(tmpdir)
+    subprocess.run(['leanproject', 'get', 'tutorials'])
+    assert (tmpdir/'tutorials'/'src'/'first_proofs.lean').exists()
+    assert (tmpdir/'tutorials'/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
