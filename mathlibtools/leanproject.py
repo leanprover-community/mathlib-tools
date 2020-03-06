@@ -93,18 +93,26 @@ def build():
 @cli.command(name='get')
 @click.argument('name')
 @click.argument('dir', default='')
-def get_project(name: str, target: str = ''):
+def get_project(name: str, dir: str = ''):
     """Clone a project from a GitHub name or git url.
     
     Put it in dir if this argument is given.
     A GitHub name without / will be considered as
-    a leanprover-community project."""
-    if not name.startswith(('git@', 'http')):
+    a leanprover-community project.
+
+    \b
+    Examples:
+      leanproject get tutorials
+      leanproject get leanprover-community/tutorials
+      leanproject get https://github.com/leanprover-community/tutorials
+      leanproject get https://github.com/leanprover-community/tutorials tutorials
+    """
+    if '@' not in name and ':/' not in name:
         if '/' not in name:
             name = 'leanprover-community/'+name
         name = 'https://github.com/'+name+'.git'
     try:
-        LeanProject.from_git_url(name, target, cache_url, force_download)
+        LeanProject.from_git_url(name, dir, cache_url, force_download)
     except GitCommandError:
         log.error('Git command failed')
         sys.exit(-1)
