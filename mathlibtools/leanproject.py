@@ -63,12 +63,20 @@ def new(path: str = '.'):
 
     If no directory name is given, the current directory is used.
     """
-    LeanProject.new(Path(path), cache_url, force_download)
+    try:
+        LeanProject.new(Path(path), cache_url, force_download)
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)
 
 @cli.command()
 def add_mathlib():
     """Add mathlib to the current project."""
-    proj().add_mathlib()
+    try:
+        proj().add_mathlib()
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)
 
 @cli.command(['upgrade-mathlib', 'update-mathlib', 'up'])
 def upgrade_mathlib():
@@ -88,7 +96,11 @@ def upgrade_mathlib():
 @cli.command()
 def build():
     """Build the current project."""
-    proj().build()
+    try:
+        proj().build()
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)
 
 @cli.command(name='get')
 @click.argument('name')
