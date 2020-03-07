@@ -110,7 +110,13 @@ def get_project(name: str, directory: str = ''):
     
     Put it in dir if this argument is given.
     A GitHub name without / will be considered as
-    a leanprover-community project."""
+    a leanprover-community project.
+    If the name ends with ':foo' then foo will be interpreted
+    as a branch name, and that branch will be checked out."""
+    if ':' in name:
+        name, branch = name.split(':')
+    else:
+        branch = ''
     if not name.startswith(('git@', 'http')):
         if '/' not in name:
             target = name
@@ -120,12 +126,15 @@ def get_project(name: str, directory: str = ''):
         name = 'https://github.com/'+name+'.git'
     else:
         target = name.split('/')[-1].replace('.git', '')
+    if branch:
+        target = target + '_' + branch
     directory = directory or target
     if directory and Path(directory).exists():
         log.error(directory + ' already exists')
         sys.exit(-1)
     try:
-        LeanProject.from_git_url(name, directory, cache_url, force_download)
+        LeanProject.from_git_url(name, directory, branch, 
+                                 cache_url, force_download)
     except GitCommandError:
         log.error('Git command failed')
         sys.exit(-1)
