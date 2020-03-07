@@ -378,7 +378,7 @@ class LeanProject:
         repo = Repo.clone_from(url, target)
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
         proj.run(['leanpkg', 'configure'])
-        if 'mathlib' in proj.deps:
+        if 'mathlib' in proj.deps or proj.is_mathlib:
             proj.get_mathlib_olean()
         return proj
     
