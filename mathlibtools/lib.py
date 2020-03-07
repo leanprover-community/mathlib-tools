@@ -371,11 +371,19 @@ class LeanProject:
                            self.directory)
 
     @classmethod
-    def from_git_url(cls, url: str, target: str = '', cache_url: str = '',
+    def from_git_url(cls, url: str, target: str = '', branch: str = '',
+                     cache_url: str = '', 
                      force_download: bool = False) -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         target = target or url.split('/')[-1].split('.')[0]
         repo = Repo.clone_from(url, target)
+        if branch:
+            try:
+                repo.remote('origin').fetch(branch)
+                repo.git.checkout(branch)
+            except (IndexError, GitCommandError) as err:
+                log.error('Invalid git branch')
+                raise err
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
         proj.run(['leanpkg', 'configure'])
         if 'mathlib' in proj.deps or proj.is_mathlib:
