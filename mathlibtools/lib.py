@@ -351,7 +351,7 @@ class LeanProject:
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
         archive = tgt_folder/(str(self.rev) + '.tar.bz2')
-        if archive.exists():
+        if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
         pack(self.directory, filter(Path.exists, [self.directory/'src', self.directory/'test']), 

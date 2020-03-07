@@ -143,8 +143,8 @@ def get_project(name: str, directory: str = ''):
         sys.exit(-1)
 
 @cli.command()
-@click.option('--force', default=False,
-              help='Make cache even if the repository is dirty.')
+@click.option('--force', default=False, is_flag=True,
+              help='Make cache even if the repository is dirty or cache exists.')
 def mk_cache(force: bool = False):
     """Cache olean files."""
     try:
@@ -159,7 +159,7 @@ def mk_cache(force: bool = False):
 
 
 @cli.command()
-@click.option('--force', default=False,
+@click.option('--force', default=False, is_flag=True,
               help='Get cache even if the repository is dirty.')
 def get_cache(force: bool = False):
     """Restore cached olean files."""
