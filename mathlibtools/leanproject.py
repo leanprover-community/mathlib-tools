@@ -230,3 +230,13 @@ def global_install():
     except Exception as err:
         log.error(err)
         sys.exit(-1)
+
+@cli.command()
+def global_upgrade():
+    """Upgrade user-wide mathlib"""
+    try:
+        proj = LeanProject.user_wide(cache_url, force_download)
+        proj.upgrade_mathlib()
+    except Exception as err:
+        log.error(err)
+        sys.exit(-1)
