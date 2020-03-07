@@ -6,14 +6,199 @@
 
 This package contains `leanproject`, a supporting tool for [Lean mathlib](https://leanprover-community.github.io/).
 
-See also [the documentation in the mathlib repository](https://github.com/leanprover-community/mathlib/blob/8700aa7d78b10b65cf8db1d9e320872ae313517a/docs/contribute/index.md).
+## Installation
 
-You can install `mathlib-tools` using [pip](https://pypi.org/project/mathlibtools/):
+Those tools use python3, at least python 3.5, which is the oldest
+version of python supported by the python foundation. They can be
+installed using [pip](https://pypi.org/project/mathlibtools/). The basic
+install command is thus:
 ```
-sudo pip3 install mathlibtools
+pip install mathlibtools
 ```
+Depending on your setup you may need to preface this command with
+`sudo`, and `pip` may be called `pip3` to distinguish it from its
+deprecated python2 version. For instance on Debian or Ubuntu, you can
+install `pip` using `sudo apt install python3-pip` and then run `sudo
+pip3 install mathlibtools` to install mathlib tools system-wide.
+If you want to use the latest development version, you can clone this
+repository, go to the repository folder, and run `pip install .`.
 
-If you are using NixOS, you can also install it using the bundled `default.nix` file:
+You also need to have [elan](https://github.com/Kha/elan) already
+installed.
+
+If you are using NixOS, you can also install mathlib tools using the bundled `default.nix` file:
 ```
 nix-env -if https://github.com/leanprover-community/mathlib-tools/archive/master.tar.gz
 ```
+
+## Basic usage
+
+Everything is done using the `leanproject` command-line tool. You can
+use `leanproject --help` to get the list of available commands and
+options.
+
+### Getting an existing Lean project
+
+The command to fetch an existing project from GitHub and make sure it
+includes a copy of mathlib ready to go is `leanproject get name` where
+name is either a git url, such as `https://github.com/leanprover-community/tutorials.git`
+or `git@github.com:leanprover-community/tutorials.git`, or a GitHub project
+identifier such as `leanprover-community/tutorials`. The organization
+name defaults to `leanprover-community` so the simplest way get the tutorials
+project is to run:
+
+```
+leanproject get tutorials
+```
+You can specify a git branch name `my_branch` by appending 
+`:my_branch` at the end of the specified name (without space). 
+You can also specify a target directory name as a second argument to the
+command.
+
+### Creating a new projet
+
+You can create a project in a new folder `my_project` by running:
+```
+leanproject new my_project
+```
+If you omit the argument, the project will be created directly inside
+the current folder. This new project will be using the latest version of
+Lean compatible with mathlib, and include a pre-built mathlib.
+
+### Building a project
+
+Only mathlib itself comes with pre-built olean files. In order to build
+oleans in a project (which is needed for every non-trivial project in
+order to get decent interactive Lean speed), you can use:
+```
+leanproject build
+```
+
+### Upgrading mathlib
+
+In an existing project depending on mathlib, you can upgrade to the
+latest mathlib version by running:
+```
+leanproject upgrade-mathlib
+```
+This can be abbreviated to `leanproject up`.
+By default, this will update the version of Lean used by this project to
+match the latest version compatible with mathlib. You can forbid such an
+upgrade by using `leanproject --no-lean-upgrade upgrade-mathlib`.
+
+## Advanced usage
+
+### Global mathlib install
+
+If you want to use mathlib outside of a Lean project, you can run:
+```
+leanproject global-install
+```
+This will put a pre-compiled mathlib inside `$HOME/.lean`, the user-wide
+Lean project whose dependencies can be used by lean files outside
+projects. You can upgrade this project using:
+```
+leanproject global-upgrade
+```
+
+### Adding mathlib to an existing project
+
+If you already have a Lean project but it doesn't use mathlib yet, you
+can go to the project folder and run:
+```
+leanproject add-mathlib
+```
+By default, this will update the version of Lean used by this project to
+match the latest version compatible with mathlib. You can forbid such an
+upgrade by using `leanproject --no-lean-upgrade add-mathlib`.
+
+### Project olean cache
+
+In any Lean project, it can be useful to store and retrieve olean files,
+especially if the project has several git branches. Storing oleans is
+done by:
+```
+leanproject mk-cache
+```
+while retrieve them is done by:
+```
+leanproject get-cache
+```
+One should note that, although olean files are indeed the primary target
+here, those command actually store everything from the
+`src` and `test` folders of the current project.
+
+If the project is mathlib itself, those caches will be stored in
+`$HOME/.mathlib/`. Otherwise, they will be in a folder `_cache` inside
+the project top-level folder. They are named after the corresponding git
+commit hash.
+
+In general, using those commands in a dirty git repository (*ie* a
+repository whose working copy contains uncommitted changes) is a bad
+idea. You can do it anyway by running `leanproject mk-cache --force` or
+`leanproject get-cache --force` respectively.
+
+The `--force` option will also overwrite existing cache for the current
+git revision.
+
+When using `get-cache` inside the mathlib project, the local cache in
+`$HOME/.mathlib/` will be searched first, before trying to download it.
+You can force download by running 
+`leanproject --force-download get-cache`. This `--force-download` option
+can also be used with the `upgrade-mathlib` command.
+
+### Git hooks
+
+If you want leanproject to fetch olean cache after each `git checkout`,
+and make olean cache after each `git commmit` in the current project,
+you can run:
+```
+leanproject hooks
+```
+Beware this will overwrite any `post-checkout` or `post-commit` file you
+could have in your project `.git/hooks`.
+
+### Cache download url handling
+
+By default, leanproject will try to find mathlib olean files hosted on a
+Azure server. You permanently override the base url it uses by running:
+```
+leanproject set-url my_url
+```
+so that leanproject will look for cache at
+`my_url/relevant_git_hash.tar.gz`. You can override this base url
+for one invocation using `leanprover --from-url my_url ...`
+(where `...` denotes a command and its arguments).
+
+### Time-stamps diagnostic and repairing
+
+`lean` uses timestamps to decide whether a olean file should be
+recompiled. You can use:
+```
+leanproject check
+```
+to check that every olean from the core library and mathlib is more
+recent than its source. In case there is some issue, `leanproject` will
+propose to reset timestamps. Of course doing so is a good idea only if
+you are sure you didn't want to modify one of those lean files.
+
+## Contributing
+
+Pull requests are welcome. The heaving lifting is done in
+`mathlibtools/lib.py` (which you can also use as a library for other
+python programs that want to manipulate Lean projects). Command line
+parsing is done in `mathlibtools/leanproject.py`, using the 
+[click library](https://click.palletsprojects.com/en/7.x/).
+
+Local testing is done using 
+[pytest](https://docs.pytest.org/en/latest/) and 
+[tox](https://tox.readthedocs.io/en/latest/). You'll need to have python
+versions 3.5 to 3.8 at hand, which probably means you want to
+use [pyenv](https://github.com/pyenv/pyenv). You'll also need
+[mypy](https://mypy.readthedocs.io/en/latest/index.html) for static
+analysis. Please do not add code without type annotations.
+
+Tests in `tests/test_functional.py` are end-to-end tests that actually
+download things from the internet and write on disk (in temporary
+folders). They are pretty slow. Other test files are meant for unit tests.
+Don't hesitate to add tests!
