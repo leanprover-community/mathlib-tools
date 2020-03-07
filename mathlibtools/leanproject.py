@@ -102,6 +102,34 @@ def build():
         log.error(err)
         sys.exit(-1)
 
+def parse_project_name(name):
+    """Parse the name argument for get_project"""
+    # This is split off the actual command function for
+    # unit testing purposes
+    if ':' in name:
+        pieces = name.split(':')
+        if len(pieces) >= 3:
+            name = ':'.join(pieces[:-1])
+            branch = pieces[-1]
+        elif 'http' in pieces[0] or '@' in pieces[0]:
+            branch = ''
+        else:
+            name, branch = pieces
+    else:
+        branch = ''
+    
+    if not name.startswith(('git@', 'http')):
+        if '/' not in name:
+            org_name = 'leanprover-community/'+name
+        else:
+            org_name, name = name, name.split('/')[1]
+        url = 'https://github.com/'+org_name+'.git'
+    else:
+        url = name
+        name = name.split('/')[-1].replace('.git', '')
+
+    return name, url, branch
+
 @cli.command(name='get')
 @click.argument('name')
 @click.argument('directory', default='')
@@ -113,27 +141,15 @@ def get_project(name: str, directory: str = ''):
     a leanprover-community project.
     If the name ends with ':foo' then foo will be interpreted
     as a branch name, and that branch will be checked out."""
-    if ':' in name:
-        name, branch = name.split(':')
-    else:
-        branch = ''
-    if not name.startswith(('git@', 'http')):
-        if '/' not in name:
-            target = name
-            name = 'leanprover-community/'+name
-        else:
-            target = name.split('/')[1]
-        name = 'https://github.com/'+name+'.git'
-    else:
-        target = name.split('/')[-1].replace('.git', '')
+    name, url, branch = parse_project_name(name)
     if branch:
-        target = target + '_' + branch
-    directory = directory or target
+        name = name + '_' + branch
+    directory = directory or name
     if directory and Path(directory).exists():
         log.error(directory + ' already exists')
         sys.exit(-1)
     try:
-        LeanProject.from_git_url(name, directory, branch, 
+        LeanProject.from_git_url(url, directory, branch, 
                                  cache_url, force_download)
     except GitCommandError:
         log.error('Git command failed')
