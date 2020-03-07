@@ -331,6 +331,10 @@ class LeanProject:
 
     def get_mathlib_olean(self) -> None:
         """Get precompiled mathlib oleans for this project."""
+        # Just in case the user broke the workflow (for instance git clone
+        # mathlib by hand and then run `leanproject get-cache`)
+        if not (self.directory/'leanpkg.path').exists():
+            self.run(['leanpkg', 'configure'])
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
                                            self.force_download), 
