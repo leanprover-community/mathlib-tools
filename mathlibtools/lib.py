@@ -454,7 +454,8 @@ class LeanProject:
             log.info('This project already depends on  mathlib')
             return
         log.info('Adding mathlib')
-        self.lean_version = mathlib_lean_version()
+        if self.upgrade_lean:
+            self.lean_version = mathlib_lean_version()
         self.write_config()
         self.run(['leanpkg', 'add', 'leanprover-community/mathlib'])
         log.debug('Configuring') 
