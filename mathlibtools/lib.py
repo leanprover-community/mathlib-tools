@@ -392,6 +392,7 @@ class LeanProject:
             subprocess.run(['leanpkg', 'new', str(path)])
 
         proj = cls.from_path(path, cache_url, force_download)
+        proj.lean_version = mathlib_lean_version()
         proj.write_config()
         proj.add_mathlib()
         return proj
