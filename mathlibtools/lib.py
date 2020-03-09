@@ -279,7 +279,7 @@ class LeanProject:
 
 
     @property
-    def is_mathlib(self):
+    def is_mathlib(self) -> bool:
         return self.name == 'mathlib'
 
     @property

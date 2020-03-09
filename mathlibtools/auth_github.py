@@ -2,7 +2,7 @@ from git import Repo, InvalidGitRepositoryError # type: ignore
 from github import Github # type: ignore
 import configparser
 
-def auth_github():
+def auth_github() -> Github:
     try:
         repo = Repo('.', search_parent_directories=True)
         config = repo.config_reader()
