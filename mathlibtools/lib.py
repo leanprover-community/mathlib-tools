@@ -403,6 +403,7 @@ class LeanProject:
         proj.lean_version = mathlib_lean_version()
         proj.write_config()
         proj.add_mathlib()
+        proj.repo.git.checkout('-b', 'master')
         return proj
 
     def run(self, args: List[str]) -> None:
