@@ -2,6 +2,7 @@ import sys
 import os
 from pathlib import Path
 from datetime import datetime
+from typing import Tuple
 
 from git.exc import GitCommandError # type: ignore
 import click
@@ -31,7 +32,7 @@ class CustomMultiCommand(click.Group):
 
         return decorator
 
-def proj():
+def proj() -> LeanProject:
     return LeanProject.from_path(Path('.'), cache_url, force_download,
                                  lean_upgrade)
 
@@ -48,7 +49,7 @@ lean_upgrade = True
               help='Download olean cache without looking for a local version.')
 @click.option('--no-lean-upgrade', 'noleanup', default=False, is_flag=True,
               help='Do not upgrade Lean version when upgrading mathlib.')
-def cli(from_url, force, noleanup):
+def cli(from_url: str, force: bool, noleanup: bool) -> None:
     """Command line client to manage Lean projects depending on mathlib.
     Use leanproject COMMAND --help to get more help on any specific command."""
     global cache_url, force_download, lean_upgrade
@@ -58,7 +59,7 @@ def cli(from_url, force, noleanup):
 
 @cli.command()
 @click.argument('path', default='.')
-def new(path: str = '.'):
+def new(path: str = '.') -> None:
     """Create a new Lean project and prepare mathlib.
 
     If no directory name is given, the current directory is used.
@@ -70,7 +71,7 @@ def new(path: str = '.'):
         sys.exit(-1)
 
 @cli.command()
-def add_mathlib():
+def add_mathlib() -> None:
     """Add mathlib to the current project."""
     try:
         proj().add_mathlib()
@@ -79,7 +80,7 @@ def add_mathlib():
         sys.exit(-1)
 
 @cli.command(['upgrade-mathlib', 'update-mathlib', 'up'])
-def upgrade_mathlib():
+def upgrade_mathlib() -> None:
     """Upgrade mathlib (as a dependency or as the main project)."""
     try:
         proj().upgrade_mathlib()
@@ -94,7 +95,7 @@ def upgrade_mathlib():
         sys.exit(-1)
 
 @cli.command()
-def build():
+def build() -> None:
     """Build the current project."""
     try:
         proj().build()
@@ -102,7 +103,7 @@ def build():
         log.error(err)
         sys.exit(-1)
 
-def parse_project_name(name):
+def parse_project_name(name: str) -> Tuple[str, str, str]:
     """Parse the name argument for get_project"""
     # This is split off the actual command function for
     # unit testing purposes
@@ -133,7 +134,7 @@ def parse_project_name(name):
 @cli.command(name='get')
 @click.argument('name')
 @click.argument('directory', default='')
-def get_project(name: str, directory: str = ''):
+def get_project(name: str, directory: str = '') -> None:
     """Clone a project from a GitHub name or git url.
     
     Put it in dir if this argument is given.
@@ -161,7 +162,7 @@ def get_project(name: str, directory: str = ''):
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
               help='Make cache even if the repository is dirty or cache exists.')
-def mk_cache(force: bool = False):
+def mk_cache(force: bool = False) -> None:
     """Cache olean files."""
     try:
         proj().mk_cache(force)
@@ -177,7 +178,7 @@ def mk_cache(force: bool = False):
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
               help='Get cache even if the repository is dirty.')
-def get_cache(force: bool = False):
+def get_cache(force: bool = False) -> None:
     """Restore cached olean files."""
     try:
         proj().get_cache(force)
@@ -193,7 +194,7 @@ def get_cache(force: bool = False):
         sys.exit(-1)
 
 @cli.command()
-def hooks():
+def hooks() -> None:
     """Setup git hooks for the current project."""
     try:
         proj().setup_git_hooks()
@@ -203,11 +204,11 @@ def hooks():
 
 @cli.command()
 @click.argument('url')
-def set_url(url: str):
+def set_url(url: str) -> None:
     """Set the default url where oleans should be fetched."""
     set_download_url(url)
 
-def check_core():
+def check_core() -> None:
     """Check that oleans are more recent than their source in core lib"""
     now = datetime.now().timestamp()
     for toolchain_path in (Path.home()/'.elan'/'toolchains').iterdir():
@@ -221,7 +222,7 @@ def check_core():
                     os.utime(str(p), (now, now))
 
 @cli.command()
-def check():
+def check() -> None:
     """Check mathlib oleans are more recent than their sources"""
     try:
         project = proj()
@@ -238,7 +239,7 @@ def check():
         sys.exit(-1)
 
 @cli.command()
-def global_install():
+def global_install() -> None:
     """Install mathlib user-wide."""
     try:
         proj = LeanProject.user_wide(cache_url, force_download)
@@ -248,7 +249,7 @@ def global_install():
         sys.exit(-1)
 
 @cli.command()
-def global_upgrade():
+def global_upgrade() -> None:
     """Upgrade user-wide mathlib"""
     try:
         proj = LeanProject.user_wide(cache_url, force_download)
