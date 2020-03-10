@@ -357,9 +357,16 @@ class LeanProject:
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
+        try:
+            unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
                                            self.force_download), 
                        self.mathlib_folder)
+        except (EOFError, shutil.ReadError):
+            log.info('Something wrong happened with the olean archive. '
+                     'I will now retry downloading.')
+            unpack_archive(
+                    get_mathlib_archive(self.mathlib_rev, self.cache_url, True), 
+                    self.mathlib_folder)
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
 
