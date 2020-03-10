@@ -192,6 +192,21 @@ def lean_version_toml(version: VersionTuple) -> str:
     else:
         return 'leanprover-community/lean:' + ver_str
     
+def check_core_timestamps(toolchain: str) -> bool:
+    """Check that oleans are more recent than their source in core lib"""
+    
+    toolchain_path = Path.home()/'.elan'/'toolchains'/toolchain
+    try:
+        return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
+               for p in toolchain_path.glob('**/*.lean'))
+    except FileNotFoundError:
+        return False
+
+def touch_oleans(path: Path) -> None:
+    """Set modification time for oleans in path and its subfolders to now"""
+    now = datetime.now().timestamp()
+    for p in path.glob('**/*.olean'):
+        os.utime(str(p), (now, now))
 
 class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
@@ -283,6 +298,12 @@ class LeanProject:
         return self.name == 'mathlib'
 
     @property
+    def toolchain(self) -> str:
+        ver_str = '{:d}.{:d}.{:d}'.format(*self.lean_version)
+        return ver_str if self.lean_version < (3, 5, 0) \
+                       else 'leanprover-community-lean-' + ver_str
+
+    @property
     def mathlib_rev(self) -> str:
         if self.is_mathlib:
             return self.rev
@@ -340,7 +361,7 @@ class LeanProject:
                                            self.force_download), 
                        self.mathlib_folder)
         # Let's now touch oleans, just in case
-        self.touch_oleans()
+        touch_oleans(self.mathlib_folder)
 
     def mk_cache(self, force: bool = False) -> None:
         """Cache oleans for this project."""
@@ -476,16 +497,13 @@ class LeanProject:
         else:
                 print("Cancelled...")
 
-    def touch_oleans(self) -> None:
-        """Set modification time for mathlib oleans to now"""
-        now = datetime.now().timestamp()
-        for p in (self.mathlib_folder/'src').glob('**/*.olean'):
-            os.utime(str(p), (now, now))
-
-    def check_timestamps(self) -> bool:
-        """Check that mathlib oleans are more recent than their sources"""
+    def check_timestamps(self) -> Tuple[bool, bool]:
+        """Check that core and mathlib oleans are more recent than their
+        sources. Return a tuple (core_ok, mathlib_ok)"""
         try:
-            return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
-                   for p in (self.mathlib_folder/'src').glob('**/*.lean'))
+            mathlib_ok = all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
+                             for p in (self.mathlib_folder/'src').glob('**/*.lean'))
         except FileNotFoundError:
-            return False
+            mathlib_ok = False
+
+        return (check_core_timestamps(self.toolchain), mathlib_ok)
