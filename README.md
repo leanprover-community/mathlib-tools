@@ -120,20 +120,20 @@ done by:
 ```
 leanproject mk-cache
 ```
-while retrieve them is done by:
+while retrieving them is done by:
 ```
 leanproject get-cache
 ```
 One should note that, although olean files are indeed the primary target
-here, those command actually store everything from the
+here, these commands actually store everything from the
 `src` and `test` folders of the current project.
 
-If the project is mathlib itself, those caches will be stored in
-`$HOME/.mathlib/`. Otherwise, they will be in a folder `_cache` inside
+If the project is mathlib itself, the caches will be stored in
+`$HOME/.mathlib/`. Otherwise, they will be stored in a folder `_cache` inside
 the project top-level folder. They are named after the corresponding git
 commit hash.
 
-In general, using those commands in a dirty git repository (*ie* a
+In general, using these commands in a dirty git repository (*ie* a
 repository whose working copy contains uncommitted changes) is a bad
 idea. You can do it anyway by running `leanproject mk-cache --force` or
 `leanproject get-cache --force` respectively.
@@ -149,30 +149,30 @@ can also be used with the `upgrade-mathlib` command.
 
 ### Git hooks
 
-If you want leanproject to fetch olean cache after each `git checkout`,
-and make olean cache after each `git commmit` in the current project,
+If you want leanproject to fetch olean caches after each `git checkout`,
+and make olean caches after each `git commmit` in the current project,
 you can run:
 ```
 leanproject hooks
 ```
 Beware this will overwrite any `post-checkout` or `post-commit` file you
-could have in your project `.git/hooks`.
+might have in your project `.git/hooks`.
 
 ### Cache download url handling
 
-By default, leanproject will try to find mathlib olean files hosted on a
+By default, leanproject will try to find mathlib olean files hosted on an
 Azure server. You permanently override the base url it uses by running:
 ```
 leanproject set-url my_url
 ```
-so that leanproject will look for cache at
+so that leanproject will look for caches at
 `my_url/relevant_git_hash.tar.gz`. You can override this base url
 for one invocation using `leanprover --from-url my_url ...`
 (where `...` denotes a command and its arguments).
 
 ### Time-stamps diagnostic and repairing
 
-`lean` uses timestamps to decide whether a olean file should be
+`lean` uses timestamps to decide whether an olean file should be
 recompiled. You can use:
 ```
 leanproject check
