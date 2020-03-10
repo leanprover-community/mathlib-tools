@@ -1,10 +1,13 @@
 import sys
 import os
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Tuple
 
 from git.exc import GitCommandError # type: ignore
+import paramiko # type: ignore
+from paramiko.ssh_exception import AuthenticationException, SSHException # type: ignore
 import click
 
 from mathlibtools.lib import (LeanProject, log, LeanDirtyRepo,
@@ -103,8 +106,12 @@ def build() -> None:
         log.error(err)
         sys.exit(-1)
 
-def parse_project_name(name: str) -> Tuple[str, str, str]:
-    """Parse the name argument for get_project"""
+def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
+    """Parse the name argument for get_project
+    Returns (name, url, branch).
+    If name is not a full url, the returned url will be a https or ssh
+    url depending on the boolean argument ssh.
+    """
     # This is split off the actual command function for
     # unit testing purposes
     if ':' in name:
@@ -124,7 +131,10 @@ def parse_project_name(name: str) -> Tuple[str, str, str]:
             org_name = 'leanprover-community/'+name
         else:
             org_name, name = name, name.split('/')[1]
-        url = 'https://github.com/'+org_name+'.git'
+        if ssh:
+            url = 'git@github.com:'+org_name+'.git'
+        else:
+            url = 'https://github.com/'+org_name+'.git'
     else:
         url = name
         name = name.split('/')[-1].replace('.git', '')
@@ -142,7 +152,18 @@ def get_project(name: str, directory: str = '') -> None:
     a leanprover-community project.
     If the name ends with ':foo' then foo will be interpreted
     as a branch name, and that branch will be checked out."""
-    name, url, branch = parse_project_name(name)
+
+    # check whether we can ssh into GitHub
+    try:
+        client = paramiko.client.SSHClient()
+        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy) 
+        client.connect('github.com', username='git')
+        client.close()
+        ssh = True
+    except (AuthenticationException, SSHException):
+        ssh = False
+
+    name, url, branch = parse_project_name(name, ssh)
     if branch:
         name = name + '_' + branch
     directory = directory or name
