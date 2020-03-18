@@ -55,7 +55,7 @@ You can specify a git branch name `my_branch` by appending
 You can also specify a target directory name as a second argument to the
 command.
 
-### Creating a new projet
+### Creating a new project
 
 You can create a project in a new folder `my_project` by running:
 ```
