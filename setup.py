@@ -14,7 +14,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         "console_scripts": [
-            "leanproject = mathlibtools.leanproject:cli",
+            "leanproject = mathlibtools.leanproject:safe_cli",
         ]},
     package_data = { 'mathlibtools': ['post-commit', 'post-checkout'] },
     classifiers=[

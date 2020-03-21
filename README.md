@@ -202,3 +202,10 @@ Tests in `tests/test_functional.py` are end-to-end tests that actually
 download things from the internet and write on disk (in temporary
 folders). They are pretty slow. Other test files are meant for unit tests.
 Don't hesitate to add tests!
+
+## Troubleshooting
+
+If `leanproject` ends with a mysterious error message, you can run it 
+using the `--debug` flag, e.g. `leanproject --debug new my_project`. 
+It will then probably output a python trace that you'll be able to paste
+in a GitHub issue or on [Zulip](https://leanprover.zulipchat.com/).
