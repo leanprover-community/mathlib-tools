@@ -44,6 +44,14 @@ def proj() -> LeanProject:
 cache_url = ''
 force_download = False
 lean_upgrade = True
+debug = False
+
+def handle_exception(exc, msg):
+    if debug:
+        raise exc
+    else:
+        log.error(msg)
+        sys.exit(-1)
 
 @click.group(cls=CustomMultiCommand, context_settings={ 'help_option_names':['-h', '--help']})
 @click.option('--from-url', '-u', default='', nargs=1,
@@ -52,13 +60,16 @@ lean_upgrade = True
               help='Download olean cache without looking for a local version.')
 @click.option('--no-lean-upgrade', 'noleanup', default=False, is_flag=True,
               help='Do not upgrade Lean version when upgrading mathlib.')
-def cli(from_url: str, force: bool, noleanup: bool) -> None:
+@click.option('--debug', 'python_debug', default=False, is_flag=True,
+              help='Display python tracebacks in case of error.')
+def cli(from_url: str, force: bool, noleanup: bool, python_debug: bool) -> None:
     """Command line client to manage Lean projects depending on mathlib.
     Use leanproject COMMAND --help to get more help on any specific command."""
-    global cache_url, force_download, lean_upgrade
+    global cache_url, force_download, lean_upgrade, debug
     cache_url = from_url
     force_download = force
     lean_upgrade = not noleanup
+    debug = python_debug
 
 @cli.command()
 @click.argument('path', default='.')
@@ -67,44 +78,28 @@ def new(path: str = '.') -> None:
 
     If no directory name is given, the current directory is used.
     """
-    try:
-        LeanProject.new(Path(path), cache_url, force_download)
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    LeanProject.new(Path(path), cache_url, force_download)
 
 @cli.command()
 def add_mathlib() -> None:
     """Add mathlib to the current project."""
-    try:
-        proj().add_mathlib()
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    proj().add_mathlib()
 
 @cli.command(['upgrade-mathlib', 'update-mathlib', 'up'])
 def upgrade_mathlib() -> None:
     """Upgrade mathlib (as a dependency or as the main project)."""
     try:
         proj().upgrade_mathlib()
-    except LeanDownloadError:
-        log.error('Failed to fetch mathlib oleans')
-        sys.exit(-1)
+    except LeanDownloadError as err:
+        handle_exception(err, 'Failed to fetch mathlib oleans')
     except InvalidLeanProject:
         project = LeanProject.user_wide(cache_url, force_download)
         project.upgrade_mathlib()
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
 
 @cli.command()
 def build() -> None:
     """Build the current project."""
-    try:
-        proj().build()
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    proj().build()
 
 def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
     """Parse the name argument for get_project
@@ -173,12 +168,8 @@ def get_project(name: str, directory: str = '') -> None:
     try:
         LeanProject.from_git_url(url, directory, branch, 
                                  cache_url, force_download)
-    except GitCommandError:
-        log.error('Git command failed')
-        sys.exit(-1)
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    except GitCommandError as err:
+        handle_exception(err, 'Git command failed')
 
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
@@ -187,14 +178,10 @@ def mk_cache(force: bool = False) -> None:
     """Cache olean files."""
     try:
         proj().mk_cache(force)
-    except LeanDirtyRepo:
-        log.error('The repository is dirty, please commit changes before '
-                 'making cache, or run this command with option --force.')
-        sys.exit(-1)
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
-
+    except LeanDirtyRepo as err:
+        handle_exception(err, 
+                'The repository is dirty, please commit changes before '
+                'making cache, or run this command with option --force.')
 
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
@@ -203,25 +190,17 @@ def get_cache(force: bool = False) -> None:
     """Restore cached olean files."""
     try:
         proj().get_cache(force)
-    except LeanDirtyRepo:
-        log.error('The repository is dirty, please commit changes before '
-                  'fetching cache, or run this command with option --force.')
-        sys.exit(-1)
-    except (LeanDownloadError, FileNotFoundError):
-        log.error('Failed to fetch mathlib oleans')
-        sys.exit(-1)
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    except LeanDirtyRepo as err:
+        handle_exception(err,
+                'The repository is dirty, please commit changes before '
+                'fetching cache, or run this command with option --force.')
+    except (LeanDownloadError, FileNotFoundError) as err:
+        handle_exception(err, 'Failed to fetch mathlib oleans')
 
 @cli.command()
 def hooks() -> None:
     """Setup git hooks for the current project."""
-    try:
-        proj().setup_git_hooks()
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    proj().setup_git_hooks()
 
 @cli.command()
 @click.argument('url')
@@ -232,44 +211,38 @@ def set_url(url: str) -> None:
 @cli.command()
 def check() -> None:
     """Check mathlib oleans are more recent than their sources"""
-    try:
-        project = proj()
-        core_ok, mathlib_ok = project.check_timestamps()
-        toolchain = project.toolchain
-        toolchain_path = Path.home()/'.elan'/'toolchains'/toolchain
-        if not core_ok:
-            print('Some core oleans files in toolchain {} seem older than '
-                  'their source.'.format(toolchain))
-            touch = input('Do you want to set their modification time to now (y/n) ? ')
-            if touch.lower() in ['y', 'yes']:
-                touch_oleans(toolchain_path)
-        if not mathlib_ok:
-            print('Some mathlib oleans files seem older than their source.')
-            touch = input('Do you want to set their modification time to now (y/n) ? ')
-            if touch.lower() in ['y', 'yes']:
-                touch_oleans(project.mathlib_folder/'src')
-        if core_ok and mathlib_ok:
-            log.info('Everything looks fine.')
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    project = proj()
+    core_ok, mathlib_ok = project.check_timestamps()
+    toolchain = project.toolchain
+    toolchain_path = Path.home()/'.elan'/'toolchains'/toolchain
+    if not core_ok:
+        print('Some core oleans files in toolchain {} seem older than '
+              'their source.'.format(toolchain))
+        touch = input('Do you want to set their modification time to now (y/n) ? ')
+        if touch.lower() in ['y', 'yes']:
+            touch_oleans(toolchain_path)
+    if not mathlib_ok:
+        print('Some mathlib oleans files seem older than their source.')
+        touch = input('Do you want to set their modification time to now (y/n) ? ')
+        if touch.lower() in ['y', 'yes']:
+            touch_oleans(project.mathlib_folder/'src')
+    if core_ok and mathlib_ok:
+        log.info('Everything looks fine.')
 
 @cli.command()
 def global_install() -> None:
     """Install mathlib user-wide."""
-    try:
-        proj = LeanProject.user_wide(cache_url, force_download)
-        proj.add_mathlib()
-    except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+    proj = LeanProject.user_wide(cache_url, force_download)
+    proj.add_mathlib()
 
 @cli.command()
 def global_upgrade() -> None:
     """Upgrade user-wide mathlib"""
-    try:
-        proj = LeanProject.user_wide(cache_url, force_download)
-        proj.upgrade_mathlib()
+    proj = LeanProject.user_wide(cache_url, force_download)
+    proj.upgrade_mathlib()
+
+def safe_cli():
+    try:    
+        cli()
     except Exception as err:
-        log.error(err)
-        sys.exit(-1)
+        handle_exception(err, str(err))
