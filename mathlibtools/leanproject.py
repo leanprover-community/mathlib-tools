@@ -198,6 +198,14 @@ def get_cache(force: bool = False) -> None:
         handle_exception(err, 'Failed to fetch mathlib oleans')
 
 @cli.command()
+def get_mathlib_cache(force: bool = False) -> None:
+    """Get mathlib oleans without upgrading."""
+    try:
+        proj().get_mathlib_olean()
+    except (LeanDownloadError, FileNotFoundError) as err:
+        handle_exception(err, 'Failed to fetch mathlib oleans')
+
+@cli.command()
 def hooks() -> None:
     """Setup git hooks for the current project."""
     proj().setup_git_hooks()

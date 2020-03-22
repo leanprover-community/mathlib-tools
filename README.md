@@ -74,6 +74,17 @@ order to get decent interactive Lean speed), you can use:
 leanproject build
 ```
 
+### Getting mathlib oleans
+
+In an existing project depending on mathlib (or in mathlib itself), you
+can run:
+```
+leanproject get-mathlib-cache
+```
+to download a compiled mathlib at the commit currently specified in the
+project `leanpkg.toml` (see the next section if you want to update this
+commit and get the latest mathlib).
+
 ### Upgrading mathlib
 
 In an existing project depending on mathlib, you can upgrade to the
