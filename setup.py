@@ -22,6 +22,6 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent" ],
     python_requires='>=3.5',
-    install_requires=['toml', 'PyGithub', 'certifi', 'gitpython>=3.0.0', 'requests',
+    install_requires=['toml', 'PyGithub', 'certifi', 'gitpython>=2.1.11', 'requests',
                       'Click', 'tqdm', 'paramiko']
 )
