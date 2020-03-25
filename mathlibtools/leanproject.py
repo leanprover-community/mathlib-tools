@@ -120,7 +120,7 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
             name, branch = pieces
     else:
         branch = ''
-    
+
     if not name.startswith(('git@', 'http')):
         if '/' not in name:
             org_name = 'leanprover-community/'+name
@@ -141,7 +141,7 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
 @click.argument('directory', default='')
 def get_project(name: str, directory: str = '') -> None:
     """Clone a project from a GitHub name or git url.
-    
+
     Put it in dir if this argument is given.
     A GitHub name without / will be considered as
     a leanprover-community project.
@@ -151,7 +151,7 @@ def get_project(name: str, directory: str = '') -> None:
     # check whether we can ssh into GitHub
     try:
         client = paramiko.client.SSHClient()
-        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy) 
+        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
         client.connect('github.com', username='git')
         client.close()
         ssh = True
@@ -166,7 +166,7 @@ def get_project(name: str, directory: str = '') -> None:
         log.error(directory + ' already exists')
         sys.exit(-1)
     try:
-        LeanProject.from_git_url(url, directory, branch, 
+        LeanProject.from_git_url(url, directory, branch,
                                  cache_url, force_download)
     except GitCommandError as err:
         handle_exception(err, 'Git command failed')
@@ -179,7 +179,7 @@ def mk_cache(force: bool = False) -> None:
     try:
         proj().mk_cache(force)
     except LeanDirtyRepo as err:
-        handle_exception(err, 
+        handle_exception(err,
                 'The repository is dirty, please commit changes before '
                 'making cache, or run this command with option --force.')
 
@@ -204,6 +204,22 @@ def get_mathlib_cache(force: bool = False) -> None:
         proj().get_mathlib_olean()
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch mathlib oleans')
+
+@cli.command()
+def delete_zombies() -> None:
+    """Delete zombie oleans, .olean files with matching .lean files"""
+    try:
+        proj().delete_zombies()
+    except (LeanDownloadError, FileNotFoundError) as err:
+        handle_exception(err, 'Failed to delete zombies')
+
+@cli.command()
+def clean() -> None:
+    """Delete zombie oleans, .olean files with matching .lean files"""
+    try:
+        proj().clean()
+    except (LeanDownloadError, FileNotFoundError) as err:
+        handle_exception(err, 'Failed to clean')
 
 @cli.command()
 def hooks() -> None:
@@ -250,7 +266,7 @@ def global_upgrade() -> None:
     proj.upgrade_mathlib()
 
 def safe_cli():
-    try:    
+    try:
         cli()
     except Exception as err:
         handle_exception(err, str(err))

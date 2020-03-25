@@ -192,10 +192,36 @@ def lean_version_toml(version: VersionTuple) -> str:
         return ver_str
     else:
         return 'leanprover-community/lean:' + ver_str
-    
+
+
+def clean(dir):
+    print('cleaning {} ...'.format(dir))
+    for (path, _dirs, fs) in os.walk(dir):
+        for fn in fs:
+            if os.path.splitext(fn)[1] == '.olean':
+                fn = Path(path, fn)
+                os.remove(fn)
+
+
+def delete_zombies(dir):
+    for (path, _dirs, fs) in os.walk(dir):
+        olean = set(
+            filter(lambda fn: os.path.splitext(fn)[1] == '.olean', fs))
+        lean = filter(lambda fn:
+                      os.path.splitext(fn)[1] == '.lean', fs)
+        olean.difference_update(
+            map(lambda fn:
+                os.path.splitext(fn)[0] + '.olean', lean))
+        path = Path(path)
+        for zombie in olean:
+            fn = path/Path(zombie)
+            print('deleting {} ...'.format(fn))
+            os.remove(fn)
+
+
 def check_core_timestamps(toolchain: str) -> bool:
     """Check that oleans are more recent than their source in core lib"""
-    
+
     toolchain_path = Path.home()/'.elan'/'toolchains'/toolchain
     try:
         return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
@@ -421,7 +447,7 @@ class LeanProject:
         if 'mathlib' in proj.deps or proj.is_mathlib:
             proj.get_mathlib_olean()
         return proj
-    
+
     @classmethod
     def new(cls, path: Path = Path('.'), cache_url: str = '',
             force_download: bool = False) -> 'LeanProject':
@@ -440,9 +466,31 @@ class LeanProject:
 
     def run(self, args: List[str]) -> None:
         """Run a command in the project directory.
-           
+
            args is a list as in subprocess.run"""
         subprocess.run(args, cwd=str(self.directory))
+
+    def clean(self) -> None:
+        src_dir = self.directory/self.pkg_config['path']
+        test_dir = self.directory/'test'
+        if os.path.exists(src_dir):
+            clean(src_dir)
+        else:
+            raise InvalidLean(
+                'directory specified by \'path\' does not exist {}'.format(src_dir))
+        if os.path.exists(test_dir):
+            clean(test_dir)
+
+    def delete_zombies(self) -> None:
+        src_dir = self.directory/self.pkg_config['path']
+        test_dir = self.directory/'test'
+        if os.path.exists(src_dir):
+            delete_zombies(src_dir)
+        else:
+            raise InvalidLean(
+                'directory specified by \'path\' does not exist {}'.format(src_dir))
+        if os.path.exists(test_dir):
+            delete_zombies(test_dir)
 
     def build(self) -> None:
         log.info('Building project '+self.name)
@@ -456,8 +504,8 @@ class LeanProject:
         """
         if self.is_mathlib:
             try:
-                rem = next(remote for remote in self.repo.remotes 
-                           if any('leanprover' in url 
+                rem = next(remote for remote in self.repo.remotes
+                           if any('leanprover' in url
                                   for url in remote.urls))
                 rem.pull(self.repo.active_branch)
             except (StopIteration, GitCommandError):
@@ -492,7 +540,7 @@ class LeanProject:
         self.write_config()
         log.info('Adding mathlib')
         self.run(['leanpkg', 'add', 'leanprover-community/mathlib'])
-        log.debug('Configuring') 
+        log.debug('Configuring')
         self.run(['leanpkg', 'configure'])
         self.read_config()
         self.get_mathlib_olean()
@@ -513,7 +561,7 @@ class LeanProject:
         """Check that core and mathlib oleans are more recent than their
         sources. Return a tuple (core_ok, mathlib_ok)"""
         try:
-            mathlib_ok = all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
+            mathlib_ok = all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime
                              for p in (self.mathlib_folder/'src').glob('**/*.lean'))
         except FileNotFoundError:
             mathlib_ok = False
