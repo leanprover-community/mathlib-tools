@@ -476,7 +476,7 @@ class LeanProject:
         if os.path.exists(src_dir):
             clean(src_dir)
         else:
-            raise InvalidLean(
+            raise InvalidLeanProject(
                 'directory specified by \'path\' does not exist {}'.format(src_dir))
         if os.path.exists(test_dir):
             clean(test_dir)
@@ -487,7 +487,7 @@ class LeanProject:
         if os.path.exists(src_dir):
             delete_zombies(src_dir)
         else:
-            raise InvalidLean(
+            raise InvalidLeanProject(
                 'directory specified by \'path\' does not exist {}'.format(src_dir))
         if os.path.exists(test_dir):
             delete_zombies(test_dir)
