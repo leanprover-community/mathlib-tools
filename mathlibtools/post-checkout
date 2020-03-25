@@ -12,7 +12,7 @@ if [ "$CHANGED_BRANCH" -eq "1" ]; then
 		echo "Trying to fetch cached olean"
 		leanproject get-cache
 		leanproject get-mathlib-cache
-                leanproject delete-zombies
+		leanproject delete-zombies
     else
         echo "'env python3' failed; not running post-checkout hook"
     fi
