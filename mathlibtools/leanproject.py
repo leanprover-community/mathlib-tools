@@ -207,7 +207,7 @@ def get_mathlib_cache(force: bool = False) -> None:
 
 @cli.command()
 def delete_zombies() -> None:
-    """Delete zombie oleans, .olean files with matching .lean files"""
+    """Delete zombie oleans, .olean files with no matching .lean files"""
     try:
         proj().delete_zombies()
     except (LeanDownloadError, FileNotFoundError) as err:
@@ -215,7 +215,7 @@ def delete_zombies() -> None:
 
 @cli.command()
 def clean() -> None:
-    """Delete zombie oleans, .olean files with matching .lean files"""
+    """Delete all olean files"""
     try:
         proj().clean()
     except (LeanDownloadError, FileNotFoundError) as err:
