@@ -193,31 +193,16 @@ def lean_version_toml(version: VersionTuple) -> str:
     else:
         return 'leanprover-community/lean:' + ver_str
 
+def clean(dir: Path) -> None:
+    log.info('cleaning {} ...'.format(str(dir)))
+    for path in dir.glob('**/*.olean'):
+        path.unlink()
 
-def clean(dir):
-    print('cleaning {} ...'.format(dir))
-    for (path, _dirs, fs) in os.walk(dir):
-        for fn in fs:
-            if os.path.splitext(fn)[1] == '.olean':
-                fn = Path(path, fn)
-                os.remove(fn)
-
-
-def delete_zombies(dir):
-    for (path, _dirs, fs) in os.walk(dir):
-        olean = set(
-            filter(lambda fn: os.path.splitext(fn)[1] == '.olean', fs))
-        lean = filter(lambda fn:
-                      os.path.splitext(fn)[1] == '.lean', fs)
-        olean.difference_update(
-            map(lambda fn:
-                os.path.splitext(fn)[0] + '.olean', lean))
-        path = Path(path)
-        for zombie in olean:
-            fn = path/Path(zombie)
-            print('deleting {} ...'.format(fn))
-            os.remove(fn)
-
+def delete_zombies(dir: Path) -> None:
+    for path in dir.glob('**/*.olean'):
+        if not path.with_suffix('.lean').exists():
+            log.info('deleting zombie {} ...'.format(str(path)))
+            path.unlink()
 
 def check_core_timestamps(toolchain: str) -> bool:
     """Check that oleans are more recent than their source in core lib"""
@@ -473,23 +458,23 @@ class LeanProject:
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
         test_dir = self.directory/'test'
-        if os.path.exists(src_dir):
+        if src_dir.exists():
             clean(src_dir)
         else:
             raise InvalidLeanProject(
-                'directory specified by \'path\' does not exist {}'.format(src_dir))
-        if os.path.exists(test_dir):
+                "Directory {} specified by 'path' does not exist".format(src_dir))
+        if test_dir.exists():
             clean(test_dir)
 
     def delete_zombies(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
         test_dir = self.directory/'test'
-        if os.path.exists(src_dir):
+        if src_dir.exists():
             delete_zombies(src_dir)
         else:
             raise InvalidLeanProject(
-                'directory specified by \'path\' does not exist {}'.format(src_dir))
-        if os.path.exists(test_dir):
+                "Directory {} specified by 'path' does not exist".format(src_dir))
+        if test_dir.exists():
             delete_zombies(test_dir)
 
     def build(self) -> None:
