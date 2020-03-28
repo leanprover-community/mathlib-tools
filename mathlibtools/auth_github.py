@@ -2,13 +2,8 @@ from git import Repo, InvalidGitRepositoryError # type: ignore
 from github import Github # type: ignore
 import configparser
 
-def auth_github() -> Github:
-    try:
-        repo = Repo('.', search_parent_directories=True)
-        config = repo.config_reader()
-    except:
-        print('Warning: This does not seem to be a git repository. Expect weird things...')
-        return Github()
+def auth_github(repo: Repo) -> Github:
+    config = repo.config_reader()
     try:
         return Github(config.get('github', 'user'), config.get('github', 'password'))
     except configparser.NoSectionError:
