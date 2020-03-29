@@ -42,9 +42,10 @@ class LeanDirtyRepo(Exception):
 class InvalidLeanVersion(Exception):
     pass
 
-def nightly_url(rev: str, auth: Github) -> str:
+def nightly_url(rev: str, proj_repo: Optional[Repo] = None) -> str:
     """From a git rev, try to find an asset name and url, using the Github
     authentication provided in auth."""
+    auth = auth_github(proj_repo) if proj_repo else Github()
     repo = auth.get_repo("leanprover-community/mathlib-nightly")
     tags = {tag.name: tag.commit.sha for tag in repo.get_tags()}
     try:
@@ -140,7 +141,7 @@ def download(url: str, target: Path) -> None:
 
 
 def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
-                        auth: Optional[Github] = None) -> Path:
+                        repo: Optional[Repo] = None) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
 
     Return the archive Path. Will raise LeanDownloadError if nothing works.
@@ -162,7 +163,7 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
     except LeanDownloadError:
         pass
     log.info('Looking for GitHub mathlib oleans')
-    download(nightly_url(rev, auth), path)
+    download(nightly_url(rev, repo), path)
     log.info('Found GitHub mathlib oleans')
     return path
 
@@ -224,7 +225,7 @@ class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
             pkg_config: dict, deps: dict,
             cache_url: str = '', force_download: bool = False,
-            upgrade_lean: bool = True, auth: Optional[Github] = None) -> None:
+            upgrade_lean: bool = True) -> None:
         """A Lean project."""
         self.repo = repo
         self.is_dirty = is_dirty
@@ -235,7 +236,6 @@ class LeanProject:
         self.cache_url = cache_url or get_download_url()
         self.force_download = force_download
         self.upgrade_lean = upgrade_lean
-        self.auth = auth or auth_github(self.repo)
 
     @classmethod
     def from_path(cls, path: Path, cache_url: str = '',
@@ -372,14 +372,14 @@ class LeanProject:
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         try:
             unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                           self.force_download, self.auth), 
+                                           self.force_download, self.repo), 
                        self.mathlib_folder)
         except (EOFError, shutil.ReadError):
             log.info('Something wrong happened with the olean archive. '
                      'I will now retry downloading.')
             unpack_archive(
                     get_mathlib_archive(self.mathlib_rev, self.cache_url, True,
-                        self.auth), 
+                        self.repo), 
                     self.mathlib_folder)
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
