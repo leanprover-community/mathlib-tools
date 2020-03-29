@@ -3,7 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, Optional
 
 from git.exc import GitCommandError # type: ignore
 import paramiko # type: ignore
@@ -258,6 +258,33 @@ def global_upgrade() -> None:
     """Upgrade user-wide mathlib"""
     proj = LeanProject.user_wide(cache_url, force_download)
     proj.upgrade_mathlib()
+
+@cli.command()
+@click.option('--to', 'to', default=None, 
+              help='Return only imports leading to this file.')
+@click.option('--from', 'from_', default=None, 
+              help='Return only imports using this file.')
+@click.argument('output', default='import_graph.dot')
+def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
+    """Write an import graph for this project"""
+    project = proj()
+    graph = project.import_graph
+    if to:
+        G = graph.ancestors(to)
+    elif from_:
+        G = graph.descendants(from_)
+    else:
+        G = graph
+    outpath = Path(output)
+    if outpath.suffix == '.dot':
+        G.to_dot(outpath)
+    elif outpath.suffix == '.gexf':
+        G.to_gexf(outpath)
+    elif outpath.suffix == '.graphml':
+        G.to_graphml(outpath)
+    else:
+        raise ValueError('Unsupported graph format. Use dot, gexf, or graphml.')
+
 
 def safe_cli():
     try:
