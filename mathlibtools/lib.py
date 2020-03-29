@@ -523,7 +523,6 @@ class LeanProject:
         if self.upgrade_lean:
             self.lean_version = mathlib_lean_version()
         self.write_config()
-        log.info('Adding mathlib')
         self.run(['leanpkg', 'add', 'leanprover-community/mathlib'])
         log.debug('Configuring')
         self.run(['leanpkg', 'configure'])
