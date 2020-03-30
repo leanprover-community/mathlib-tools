@@ -6,6 +6,7 @@ import tarfile
 import signal
 import re
 import os
+import stat
 import subprocess
 from datetime import datetime
 from typing import Iterable, Union, List, Tuple, Optional
@@ -534,7 +535,11 @@ class LeanProject:
         rep = input("Do you want to proceed (y/n)? ")
         if rep in ['y', 'Y']:
             shutil.copy(str(src/'post-commit'), str(hook_dir))
+            mode = (hook_dir/'post-commit').stat().st_mode 
+            (hook_dir/'post-commit').chmod(mode | stat.S_IXUSR)
             shutil.copy(str(src/'post-checkout'), str(hook_dir))
+            mode = (hook_dir/'post-checkout').stat().st_mode 
+            (hook_dir/'post-checkout').chmod(mode | stat.S_IXUSR)
             print("Successfully copied scripts")
         else:
                 print("Cancelled...")
