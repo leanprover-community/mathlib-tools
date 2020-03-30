@@ -269,21 +269,15 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
     """Write an import graph for this project"""
     project = proj()
     graph = project.import_graph
-    if to:
+    if to and from_:
+        G = graph.path(start=from_, end=to)
+    elif to:
         G = graph.ancestors(to)
     elif from_:
         G = graph.descendants(from_)
     else:
         G = graph
-    outpath = Path(output)
-    if outpath.suffix == '.dot':
-        G.to_dot(outpath)
-    elif outpath.suffix == '.gexf':
-        G.to_gexf(outpath)
-    elif outpath.suffix == '.graphml':
-        G.to_graphml(outpath)
-    else:
-        raise ValueError('Unsupported graph format. Use dot, gexf, or graphml.')
+    G.write(Path(output))
 
 
 def safe_cli():
