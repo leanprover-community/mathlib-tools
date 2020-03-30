@@ -166,7 +166,8 @@ structure, you can run:
 leanproject import-graph my_graph_file_name.suffix
 ```
 where the suffix will determine the output format. It must be either
-`dot` or `graphml` or `gexf`.
+`dot` or `graphml` or `gexf`, (or `pdf`, `svg` or `png` if
+[graphviz](https://www.graphviz.org/) is installed).
 If you want to restrict the graph to files leading to a certain file
 `my_subproject/my_file.lean` then you can run:
 ```
@@ -177,6 +178,7 @@ then you can run:
 ```
 leanproject import-graph --from my_subproject.my_file my_graph_file_name.suffix
 ```
+Combining `--to` and `--from` is possible.
 
 ### Git hooks
 
