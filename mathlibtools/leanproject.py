@@ -151,7 +151,7 @@ def get_project(name: str, directory: str = '') -> None:
     # check whether we can ssh into GitHub
     try:
         client = paramiko.client.SSHClient()
-        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
+        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         client.connect('github.com', username='git')
         client.close()
         ssh = True
