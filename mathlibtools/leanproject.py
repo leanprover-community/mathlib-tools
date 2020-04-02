@@ -163,8 +163,7 @@ def get_project(name: str, directory: str = '') -> None:
         name = name + '_' + branch
     directory = directory or name
     if directory and Path(directory).exists():
-        log.error(directory + ' already exists')
-        sys.exit(-1)
+        raise FileExistsError('Directory ' + directory + ' already exists')
     try:
         LeanProject.from_git_url(url, directory, branch,
                                  cache_url, force_download)
