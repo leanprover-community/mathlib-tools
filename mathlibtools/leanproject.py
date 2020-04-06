@@ -263,10 +263,18 @@ def global_upgrade() -> None:
 @click.option('--to', 'to', default=None, 
               help='Return only imports leading to this file.')
 @click.option('--from', 'from_', default=None, 
-              help='Return only imports using this file.')
+              help='Return only imports starting from this file.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
-    """Write an import graph for this project"""
+    """Write an import graph for this project.
+    
+    Arguments for '--to' and '--from' should be specified as 
+    Lean imports (e.g. 'data.mv_polynomial') rather than file names.
+
+    You may specify an output filename, and the suffix will determine the output format.
+    By default the graph will be written to 'import_graph.dot'.
+    For .dot, .pdf, .svg, or .png output you will need to install 'graphviz' first.
+    """
     project = proj()
     graph = project.import_graph
     if to and from_:
