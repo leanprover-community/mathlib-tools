@@ -61,7 +61,7 @@ def nightly_url(rev: str, proj_repo: Optional[Repo] = None) -> str:
         asset = next(x for x in release.get_assets()
                      if x.name.startswith('mathlib-olean-nightly-'))
     except StopIteration:
-        raise LeanDownloadError("Error: Release " + release.tag_name + 
+        raise LeanDownloadError("Error: Release " + release.tag_name +
                " does not contains a olean archive (this shouldn't happen...)")
     return asset.browser_download_url
 
@@ -80,7 +80,7 @@ VersionTuple = Tuple[int, int, int]
 def mathlib_lean_version() -> VersionTuple:
     """Return the latest Lean release supported by mathlib"""
     out = subprocess.run(['git', 'ls-remote', '--heads', MATHLIB_URL],
-            stdout=subprocess.PIPE).stdout.decode()
+            stdout=subprocess.PIPE, check=True).stdout.decode()
     version = (3, 4, 1)
     for branch in out.split('\n'):
         m = LEAN_VERSION_RE.match(branch)
@@ -212,7 +212,7 @@ def check_core_timestamps(toolchain: str) -> bool:
 
     toolchain_path = Path.home()/'.elan'/'toolchains'/toolchain
     try:
-        return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime 
+        return all(p.stat().st_mtime < p.with_suffix('.olean').stat().st_mtime
                for p in toolchain_path.glob('**/*.lean'))
     except FileNotFoundError:
         return False
@@ -306,13 +306,13 @@ class LeanProject:
 
     @classmethod
     def from_path(cls, path: Path, cache_url: str = '',
-                  force_download: bool = False, 
+                  force_download: bool = False,
                   upgrade_lean: bool = True) -> 'LeanProject':
         """Builds a LeanProject from a Path object"""
         try:
             repo = Repo(path, search_parent_directories=True)
         except InvalidGitRepositoryError:
-            raise InvalidLeanProject('Invalid git repository') 
+            raise InvalidLeanProject('Invalid git repository')
         if repo.bare:
             raise InvalidLeanProject('Git repository is not initialized')
         is_dirty = repo.is_dirty()
@@ -329,11 +329,11 @@ class LeanProject:
         return cls(repo, is_dirty, rev, directory,
                    config['package'], config['dependencies'],
                    cache_url, force_download, upgrade_lean)
-    
+
     @classmethod
-    def user_wide(cls, cache_url: str = '', 
+    def user_wide(cls, cache_url: str = '',
                   force_download: bool = False) -> 'LeanProject':
-        """Return the user-wide LeanProject (living in ~/.lean) 
+        """Return the user-wide LeanProject (living in ~/.lean)
 
         If the project does not exist, it will be created, using the latest
         version of Lean supported by mathlib."""
@@ -349,7 +349,7 @@ class LeanProject:
                 version_str = 'leanprover-community/lean:' +\
                               '.'.join(map(str, version))
 
-            pkg = { 'name': '_user_local_packages', 
+            pkg = { 'name': '_user_local_packages',
                     'version': '1',
                     'lean_version': version_str }
             with (directory/'leanpkg.toml').open('w') as pkgtoml:
@@ -363,7 +363,7 @@ class LeanProject:
     @property
     def name(self) -> str:
         return self.pkg_config['name']
-    
+
     @property
     def lean_version(self) -> VersionTuple:
         return parse_version(self.pkg_config['lean_version'])
@@ -439,14 +439,14 @@ class LeanProject:
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         try:
             unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                           self.force_download, self.repo), 
+                                           self.force_download, self.repo),
                        self.mathlib_folder)
         except (EOFError, shutil.ReadError):
             log.info('Something wrong happened with the olean archive. '
                      'I will now retry downloading.')
             unpack_archive(
                     get_mathlib_archive(self.mathlib_rev, self.cache_url, True,
-                        self.repo), 
+                        self.repo),
                     self.mathlib_folder)
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
@@ -481,7 +481,7 @@ class LeanProject:
 
     @classmethod
     def from_git_url(cls, url: str, target: str = '', branch: str = '',
-                     cache_url: str = '', 
+                     cache_url: str = '',
                      force_download: bool = False) -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         log.info('Cloning from ' + url)
@@ -505,9 +505,11 @@ class LeanProject:
             force_download: bool = False) -> 'LeanProject':
         """Create a new Lean project and prepare mathlib."""
         if path == Path('.'):
-            subprocess.run(['leanpkg', 'init', path.absolute().name])
+            subprocess.run(['leanpkg', 'init', path.absolute().name], check=True)
         else:
-            subprocess.run(['leanpkg', 'new', str(path)])
+            if path.exists():
+                raise FileExistsError('Directory ' + str(path) + ' already exists')
+            subprocess.run(['leanpkg', 'new', str(path)], check=True)
 
         proj = cls.from_path(path, cache_url, force_download)
         proj.lean_version = mathlib_lean_version()
@@ -522,7 +524,8 @@ class LeanProject:
            args is a list as in subprocess.run"""
         return subprocess.run(args, cwd=str(self.directory), 
                               stderr=subprocess.STDOUT,
-                              stdout=subprocess.PIPE).stdout.decode()
+                              stdout=subprocess.PIPE,
+                              check=True).stdout.decode()
 
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
@@ -603,10 +606,10 @@ class LeanProject:
         rep = input("Do you want to proceed (y/n)? ")
         if rep in ['y', 'Y']:
             shutil.copy(str(src/'post-commit'), str(hook_dir))
-            mode = (hook_dir/'post-commit').stat().st_mode 
+            mode = (hook_dir/'post-commit').stat().st_mode
             (hook_dir/'post-commit').chmod(mode | stat.S_IXUSR)
             shutil.copy(str(src/'post-checkout'), str(hook_dir))
-            mode = (hook_dir/'post-checkout').stat().st_mode 
+            mode = (hook_dir/'post-checkout').stat().st_mode
             (hook_dir/'post-checkout').chmod(mode | stat.S_IXUSR)
             print("Successfully copied scripts")
         else:
