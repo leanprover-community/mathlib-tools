@@ -3,7 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, Optional
 
 from git.exc import GitCommandError # type: ignore
 import paramiko # type: ignore
@@ -257,6 +257,35 @@ def global_upgrade() -> None:
     """Upgrade user-wide mathlib"""
     proj = LeanProject.user_wide(cache_url, force_download)
     proj.upgrade_mathlib()
+
+@cli.command()
+@click.option('--to', 'to', default=None, 
+              help='Return only imports leading to this file.')
+@click.option('--from', 'from_', default=None, 
+              help='Return only imports starting from this file.')
+@click.argument('output', default='import_graph.dot')
+def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
+    """Write an import graph for this project.
+    
+    Arguments for '--to' and '--from' should be specified as 
+    Lean imports (e.g. 'data.mv_polynomial') rather than file names.
+
+    You may specify an output filename, and the suffix will determine the output format.
+    By default the graph will be written to 'import_graph.dot'.
+    For .dot, .pdf, .svg, or .png output you will need to install 'graphviz' first.
+    """
+    project = proj()
+    graph = project.import_graph
+    if to and from_:
+        G = graph.path(start=from_, end=to)
+    elif to:
+        G = graph.ancestors(to)
+    elif from_:
+        G = graph.descendants(from_)
+    else:
+        G = graph
+    G.write(Path(output))
+
 
 def safe_cli():
     try:

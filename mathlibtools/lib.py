@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Iterable, Union, List, Tuple, Optional
 from tempfile import TemporaryDirectory
 
+import networkx as nx # type: ignore
 import requests
 from tqdm import tqdm # type: ignore
 import toml
@@ -222,6 +223,69 @@ def touch_oleans(path: Path) -> None:
     for p in path.glob('**/*.olean'):
         os.utime(str(p), (now, now))
 
+class ImportGraph(nx.DiGraph):
+    def __init__(self, base_path: Optional[Path] = None) -> None:
+        """A Lean project import graph."""
+        super().__init__(self)
+        self.base_path = base_path or Path('.')
+
+    def to_dot(self, path: Optional[Path] = None) -> None:
+        """Writes itself to a graphviz dot file."""
+        path = path or self.base_path/'import_graph.dot'
+        nx.drawing.nx_pydot.to_pydot(self).write_dot(str(path))
+    
+    def to_gexf(self, path: Optional[Path] = None) -> None:
+        """Writes itself to a gexf dot file, suitable for Gephi."""
+        path = path or self.base_path/'import_graph.gexf'
+        nx.write_gexf(self, str(path))
+    
+    def to_graphml(self, path: Optional[Path] = None) -> None:
+        """Writes itself to a gexf dot file, suitable for yEd."""
+        path = path or self.base_path/'import_graph.graphml'
+        nx.write_graphml(self, str(path))
+    
+    def write(self, path: Path):
+        if path.suffix == '.dot':
+            self.to_dot(path)
+        elif path.suffix == '.gexf':
+            self.to_gexf(path)
+        elif path.suffix == '.graphml':
+            self.to_graphml(path)
+        elif path.suffix in ['.pdf', '.svg', '.png']:
+            dot_format = '-T' + path.suffix[1:]
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                tmpf = Path(tmpdirname)/'tmp.dot'
+                self.to_dot(tmpf)
+                with path.open('w') as outf:
+                    subprocess.run(['dot', dot_format, str(tmpf)],
+                                   stdout=outf)
+        else:
+            raise ValueError('Unsupported graph output format. '
+                             'Use .dot, .gexf, .graphml or a valid '
+                             'graphviz output format (eg. .pdf).')
+
+    def ancestors(self, node: str) -> 'ImportGraph':
+        """Returns the subgraph leading to node."""
+        H = self.subgraph(nx.ancestors(self, node).union([node]))
+        H.base_path = self.base_path
+        return H
+
+    def descendants(self, node: str) -> 'ImportGraph':
+        """Returns the subgraph descending from node."""
+        H = self.subgraph(nx.descendants(self, node).union([node]))
+        H.base_path = self.base_path
+        return H
+    
+    def path(self, start: str, end: str) -> 'ImportGraph':
+        """Returns the subgraph descending from the start node and used by the
+        end node."""
+        D = self.descendants(start)
+        A = self.ancestors(end)
+        H = self.subgraph(set(D.nodes).intersection(A.nodes))
+        H.base_path = self.base_path
+        return H
+
+
 class LeanProject:
     def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
             pkg_config: dict, deps: dict,
@@ -233,10 +297,12 @@ class LeanProject:
         self.rev = rev
         self.directory = directory
         self.pkg_config = pkg_config
+        self.src_directory = self.directory/pkg_config.get('path', '')
         self.deps = deps
         self.cache_url = cache_url or get_download_url()
         self.force_download = force_download
         self.upgrade_lean = upgrade_lean
+        self._import_graph = None # type: Optional[ImportGraph]
 
     @classmethod
     def from_path(cls, path: Path, cache_url: str = '',
@@ -397,7 +463,7 @@ class LeanProject:
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
-        pack(self.directory, filter(Path.exists, [self.directory/'src', self.directory/'test']),
+        pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']), 
              archive)
 
     def get_cache(self, force: bool = False, url:str = '') -> None:
@@ -452,11 +518,14 @@ class LeanProject:
         proj.repo.git.checkout('-b', 'master')
         return proj
 
-    def run(self, args: List[str]) -> None:
-        """Run a command in the project directory.
+    def run(self, args: List[str]) -> str:
+        """Run a command in the project directory, and returns stdout + stderr.
 
            args is a list as in subprocess.run"""
-        subprocess.run(args, cwd=str(self.directory), check=True)
+        return subprocess.run(args, cwd=str(self.directory), 
+                              stderr=subprocess.STDOUT,
+                              stdout=subprocess.PIPE,
+                              check=True).stdout.decode()
 
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
@@ -556,3 +625,27 @@ class LeanProject:
             mathlib_ok = False
 
         return (check_core_timestamps(self.toolchain), mathlib_ok)
+
+    @property
+    def import_graph(self) -> ImportGraph:
+        if self._import_graph:
+            return self._import_graph
+        G = ImportGraph(self.directory)
+        for path in self.src_directory.glob('**/*.lean'):
+            rel = path.relative_to(self.src_directory)
+            label = str(rel.with_suffix('')).replace(os.sep, '.')
+            G.add_node(label)
+            imports = self.run(['lean', '--deps', str(path)])
+            for imp in map(Path, imports.split()):
+                try:
+                    imp_rel = imp.relative_to(self.src_directory)
+                except ValueError:
+                    # This import is not from the project
+                    continue
+                imp_label = str(imp_rel.with_suffix('')).replace(os.sep, '.')
+                G.add_edge(imp_label, label)
+        for node in G:
+            G.nodes[node]['label'] = node
+        self._import_graph = G
+        return G
+    
