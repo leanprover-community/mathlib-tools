@@ -62,6 +62,7 @@ def handle_exception(exc, msg):
               help='Do not upgrade Lean version when upgrading mathlib.')
 @click.option('--debug', 'python_debug', default=False, is_flag=True,
               help='Display python tracebacks in case of error.')
+@click.version_option()
 def cli(from_url: str, force: bool, noleanup: bool, python_debug: bool) -> None:
     """Command line client to manage Lean projects depending on mathlib.
     Use leanproject COMMAND --help to get more help on any specific command."""
