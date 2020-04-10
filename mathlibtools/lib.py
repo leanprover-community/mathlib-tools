@@ -526,6 +526,13 @@ class LeanProject:
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE,
                               check=True).stdout.decode()
+    
+    def run_echo(self, args: List[str]) -> None:
+        """Run a command in the project directory, letting stdin and stdout
+        flow.
+
+           args is a list as in subprocess.run"""
+        return subprocess.run(args, cwd=str(self.directory), check=True)
 
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
@@ -551,7 +558,7 @@ class LeanProject:
 
     def build(self) -> None:
         log.info('Building project '+self.name)
-        self.run(['leanpkg', 'build'])
+        self.run_echo(['leanpkg', 'build'])
 
     def upgrade_mathlib(self) -> None:
         """Upgrade mathlib in the project.
