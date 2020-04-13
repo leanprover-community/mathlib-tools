@@ -1,13 +1,20 @@
 import sys
-import os
-import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Tuple, Optional
 
 from git.exc import GitCommandError # type: ignore
-import paramiko # type: ignore
-from paramiko.ssh_exception import AuthenticationException, SSHException # type: ignore
+
+# paramiko depends on cryptographic libs that easily fail in half-buggy
+# environments, so let's be careful
+try:
+    import paramiko # type: ignore
+    from paramiko.ssh_exception import \
+        AuthenticationException, SSHException # type: ignore
+    PARAMIKO_OK = True
+except ImportError:
+    PARAMIKO_OK = False
+
 import click
 
 from mathlibtools.lib import (LeanProject, log, LeanDirtyRepo,
@@ -151,12 +158,13 @@ def get_project(name: str, directory: str = '') -> None:
 
     # check whether we can ssh into GitHub
     try:
+        assert PARAMIKO_OK
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         client.connect('github.com', username='git')
         client.close()
         ssh = True
-    except (AuthenticationException, SSHException):
+    except (AssertionError, AuthenticationException, SSHException):
         ssh = False
 
     name, url, branch = parse_project_name(name, ssh)
@@ -290,6 +298,6 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
 
 def safe_cli():
     try:
-        cli()
+        cli() # pylint: disable=no-value-for-parameter
     except Exception as err:
         handle_exception(err, str(err))
