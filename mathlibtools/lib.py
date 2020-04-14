@@ -79,7 +79,7 @@ VersionTuple = Tuple[int, int, int]
 
 def mathlib_lean_version() -> VersionTuple:
     """Return the latest Lean release supported by mathlib"""
-    out = subprocess.run(['git', 'ls-remote', '--heads', MATHLIB_URL],
+    out = subprocess.run([shutil.which('git'), 'ls-remote', '--heads', MATHLIB_URL],
             stdout=subprocess.PIPE, check=True).stdout.decode()
     version = (3, 4, 1)
     for branch in out.split('\n'):
@@ -233,17 +233,17 @@ class ImportGraph(nx.DiGraph):
         """Writes itself to a graphviz dot file."""
         path = path or self.base_path/'import_graph.dot'
         nx.drawing.nx_pydot.to_pydot(self).write_dot(str(path))
-    
+
     def to_gexf(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for Gephi."""
         path = path or self.base_path/'import_graph.gexf'
         nx.write_gexf(self, str(path))
-    
+
     def to_graphml(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for yEd."""
         path = path or self.base_path/'import_graph.graphml'
         nx.write_graphml(self, str(path))
-    
+
     def write(self, path: Path):
         if path.suffix == '.dot':
             self.to_dot(path)
@@ -257,7 +257,7 @@ class ImportGraph(nx.DiGraph):
                 tmpf = Path(tmpdirname)/'tmp.dot'
                 self.to_dot(tmpf)
                 with path.open('w') as outf:
-                    subprocess.run(['dot', dot_format, str(tmpf)],
+                    subprocess.run([shutil.which('dot'), dot_format, str(tmpf)],
                                    stdout=outf)
         else:
             raise ValueError('Unsupported graph output format. '
@@ -275,7 +275,7 @@ class ImportGraph(nx.DiGraph):
         H = self.subgraph(nx.descendants(self, node).union([node]))
         H.base_path = self.base_path
         return H
-    
+
     def path(self, start: str, end: str) -> 'ImportGraph':
         """Returns the subgraph descending from the start node and used by the
         end node."""
@@ -463,7 +463,7 @@ class LeanProject:
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
-        pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']), 
+        pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']),
              archive)
 
     def get_cache(self, force: bool = False, url:str = '') -> None:
@@ -505,11 +505,11 @@ class LeanProject:
             force_download: bool = False) -> 'LeanProject':
         """Create a new Lean project and prepare mathlib."""
         if path == Path('.'):
-            subprocess.run(['leanpkg', 'init', path.absolute().name], check=True)
+            subprocess.run([shutil.which('leanpkg'), 'init', path.absolute().name], check=True)
         else:
             if path.exists():
                 raise FileExistsError('Directory ' + str(path) + ' already exists')
-            subprocess.run(['leanpkg', 'new', str(path)], check=True)
+            subprocess.run([shutil.which('leanpkg'), 'new', str(path)], check=True)
 
         proj = cls.from_path(path, cache_url, force_download)
         proj.lean_version = mathlib_lean_version()
@@ -522,16 +522,20 @@ class LeanProject:
         """Run a command in the project directory, and returns stdout + stderr.
 
            args is a list as in subprocess.run"""
-        return subprocess.run(args, cwd=str(self.directory), 
+        if len(args):
+            args[0] = shutil.which(args[0])
+        return subprocess.run(args, cwd=str(self.directory),
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE,
                               check=True).stdout.decode()
-    
+
     def run_echo(self, args: List[str]) -> None:
         """Run a command in the project directory, letting stdin and stdout
         flow.
 
            args is a list as in subprocess.run"""
+        if len(args):
+            args[0] = shutil.which(args[0])
         return subprocess.run(args, cwd=str(self.directory), check=True)
 
     def clean(self) -> None:
@@ -655,4 +659,3 @@ class LeanProject:
             G.nodes[node]['label'] = node
         self._import_graph = G
         return G
-    
