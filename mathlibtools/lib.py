@@ -532,7 +532,7 @@ class LeanProject:
         flow.
 
            args is a list as in subprocess.run"""
-        return subprocess.run(args, cwd=str(self.directory), check=True)
+        subprocess.run(args, cwd=str(self.directory), check=True)
 
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']

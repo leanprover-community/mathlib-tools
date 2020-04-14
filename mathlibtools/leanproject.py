@@ -9,8 +9,8 @@ from git.exc import GitCommandError # type: ignore
 # environments, so let's be careful
 try:
     import paramiko # type: ignore
-    from paramiko.ssh_exception import \
-        AuthenticationException, SSHException # type: ignore
+    from paramiko.ssh_exception import (       # type: ignore
+        AuthenticationException, SSHException) # type: ignore
     PARAMIKO_OK = True
 except ImportError:
     PARAMIKO_OK = False
