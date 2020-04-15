@@ -435,7 +435,7 @@ class LeanProject:
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
         if not (self.directory/'leanpkg.path').exists():
-            self.run(['leanpkg', 'configure'])
+            self.run([shutil.which('leanpkg'), 'configure'])
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         try:
             unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
@@ -495,7 +495,7 @@ class LeanProject:
                 log.error('Invalid git branch')
                 raise err
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
-        proj.run(['leanpkg', 'configure'])
+        proj.run([shutil.which('leanpkg'), 'configure'])
         if 'mathlib' in proj.deps or proj.is_mathlib:
             proj.get_mathlib_olean()
         return proj
@@ -522,8 +522,7 @@ class LeanProject:
         """Run a command in the project directory, and returns stdout + stderr.
 
            args is a list as in subprocess.run"""
-        if len(args):
-            args[0] = shutil.which(args[0])
+        args[0] = shutil.which(args[0])
         return subprocess.run(args, cwd=str(self.directory),
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE,
@@ -534,9 +533,8 @@ class LeanProject:
         flow.
 
            args is a list as in subprocess.run"""
-        if len(args):
-            args[0] = shutil.which(args[0])
-        return subprocess.run(args, cwd=str(self.directory), check=True)
+        args[0] = shutil.which(args[0])
+        subprocess.run(args, cwd=str(self.directory), check=True)
 
     def clean(self) -> None:
         src_dir = self.directory/self.pkg_config['path']
@@ -562,7 +560,7 @@ class LeanProject:
 
     def build(self) -> None:
         log.info('Building project '+self.name)
-        self.run_echo(['leanpkg', 'build'])
+        self.run_echo([shutil.which('leanpkg'), 'build'])
 
     def upgrade_mathlib(self) -> None:
         """Upgrade mathlib in the project.
@@ -593,7 +591,7 @@ class LeanProject:
                 if mathlib_lean > self.lean_version:
                     self.lean_version = mathlib_lean
                     self.write_config()
-            self.run(['leanpkg', 'upgrade'])
+            self.run([shutil.which('leanpkg'), 'upgrade'])
             self.read_config()
         self.get_mathlib_olean()
 
@@ -606,7 +604,7 @@ class LeanProject:
         if self.upgrade_lean:
             self.lean_version = mathlib_lean_version()
         self.write_config()
-        self.run(['leanpkg', 'add', 'leanprover-community/mathlib'])
+        self.run([shutil.which('leanpkg'), 'add', 'leanprover-community/mathlib'])
         self.read_config()
         self.get_mathlib_olean()
 
@@ -646,7 +644,7 @@ class LeanProject:
             rel = path.relative_to(self.src_directory)
             label = str(rel.with_suffix('')).replace(os.sep, '.')
             G.add_node(label)
-            imports = self.run(['lean', '--deps', str(path)])
+            imports = self.run([shutil.which('lean'), '--deps', str(path)])
             for imp in map(Path, imports.split()):
                 try:
                     imp_rel = imp.relative_to(self.src_directory)
