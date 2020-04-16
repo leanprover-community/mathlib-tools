@@ -147,14 +147,19 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
 @cli.command(name='get')
 @click.argument('name')
 @click.argument('directory', default='')
-def get_project(name: str, directory: str = '') -> None:
+@click.option('--new-branch', '-b', default=False, is_flag=True,
+              help='Create a new branch.')
+def get_project(name: str, new_branch: bool, directory: str = '') -> None:
     """Clone a project from a GitHub name or git url.
 
     Put it in dir if this argument is given.
     A GitHub name without / will be considered as
     a leanprover-community project.
     If the name ends with ':foo' then foo will be interpreted
-    as a branch name, and that branch will be checked out."""
+    as a branch name, and that branch will be checked out.
+
+    This will fail if the branch does not exist. If you want to create a new
+    branch, pass the `-b` option."""
 
     # check whether we can ssh into GitHub
     try:
@@ -174,7 +179,7 @@ def get_project(name: str, directory: str = '') -> None:
     if directory and Path(directory).exists():
         raise FileExistsError('Directory ' + directory + ' already exists')
     try:
-        LeanProject.from_git_url(url, directory, branch,
+        LeanProject.from_git_url(url, directory, branch, new_branch,
                                  cache_url, force_download)
     except GitCommandError as err:
         handle_exception(err, 'Git command failed')

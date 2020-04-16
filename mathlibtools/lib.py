@@ -233,17 +233,17 @@ class ImportGraph(nx.DiGraph):
         """Writes itself to a graphviz dot file."""
         path = path or self.base_path/'import_graph.dot'
         nx.drawing.nx_pydot.to_pydot(self).write_dot(str(path))
-    
+
     def to_gexf(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for Gephi."""
         path = path or self.base_path/'import_graph.gexf'
         nx.write_gexf(self, str(path))
-    
+
     def to_graphml(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for yEd."""
         path = path or self.base_path/'import_graph.graphml'
         nx.write_graphml(self, str(path))
-    
+
     def write(self, path: Path):
         if path.suffix == '.dot':
             self.to_dot(path)
@@ -275,7 +275,7 @@ class ImportGraph(nx.DiGraph):
         H = self.subgraph(nx.descendants(self, node).union([node]))
         H.base_path = self.base_path
         return H
-    
+
     def path(self, start: str, end: str) -> 'ImportGraph':
         """Returns the subgraph descending from the start node and used by the
         end node."""
@@ -463,7 +463,7 @@ class LeanProject:
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
-        pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']), 
+        pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']),
              archive)
 
     def get_cache(self, force: bool = False, url:str = '') -> None:
@@ -480,19 +480,28 @@ class LeanProject:
                            self.directory)
 
     @classmethod
-    def from_git_url(cls, url: str, target: str = '', branch: str = '',
+    def from_git_url(cls, url: str, target: str = '',
+                     branch: str = '', create_branch: bool = False,
                      cache_url: str = '',
                      force_download: bool = False) -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         log.info('Cloning from ' + url)
         target = target or url.split('/')[-1].split('.')[0]
         repo = Repo.clone_from(url, target)
-        if branch:
+        if create_branch and branch:
+            try:
+                repo.git.checkout('HEAD', b=branch)
+            except (IndexError, GitCommandError):
+                log.error('Cannot create new git branch')
+                shutil.rmtree(target)
+                raise
+        elif branch:
             try:
                 repo.remote('origin').fetch(branch)
                 repo.git.checkout(branch)
             except (IndexError, GitCommandError) as err:
                 log.error('Invalid git branch')
+                shutil.rmtree(target)
                 raise err
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
         proj.run(['leanpkg', 'configure'])
@@ -522,11 +531,11 @@ class LeanProject:
         """Run a command in the project directory, and returns stdout + stderr.
 
            args is a list as in subprocess.run"""
-        return subprocess.run(args, cwd=str(self.directory), 
+        return subprocess.run(args, cwd=str(self.directory),
                               stderr=subprocess.STDOUT,
                               stdout=subprocess.PIPE,
                               check=True).stdout.decode()
-    
+
     def run_echo(self, args: List[str]) -> None:
         """Run a command in the project directory, letting stdin and stdout
         flow.
@@ -655,4 +664,3 @@ class LeanProject:
             G.nodes[node]['label'] = node
         self._import_graph = G
         return G
-    
