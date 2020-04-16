@@ -215,27 +215,6 @@ recent than its source. In case there is some issue, `leanproject` will
 propose to reset timestamps. Of course doing so is a good idea only if
 you are sure you didn't want to modify one of those lean files.
 
-## Contributing
-
-Pull requests are welcome. The heaving lifting is done in
-`mathlibtools/lib.py` (which you can also use as a library for other
-python programs that want to manipulate Lean projects). Command line
-parsing is done in `mathlibtools/leanproject.py`, using the 
-[click library](https://click.palletsprojects.com/en/7.x/).
-
-Local testing is done using 
-[pytest](https://docs.pytest.org/en/latest/) and 
-[tox](https://tox.readthedocs.io/en/latest/). You'll need to have python
-versions 3.5 to 3.8 at hand, which probably means you want to
-use [pyenv](https://github.com/pyenv/pyenv). You'll also need
-[mypy](https://mypy.readthedocs.io/en/latest/index.html) for static
-analysis. Please do not add code without type annotations.
-
-Tests in `tests/test_functional.py` are end-to-end tests that actually
-download things from the internet and write on disk (in temporary
-folders). They are pretty slow. Other test files are meant for unit tests.
-Don't hesitate to add tests!
-
 ## Troubleshooting
 
 If `leanproject` ends with a mysterious error message, you can run it 
