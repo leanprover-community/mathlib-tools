@@ -9,7 +9,7 @@ parsing is done in `mathlibtools/leanproject.py`, using the
 Please do not add code without type annotations. And of course you need
 to be able to run `mypy mathlibtools` without any error.
 
-##  Testing
+## Testing
 
 We run our tests using [pytest](https://docs.pytest.org/en/latest/).
 As usual with pytest, no much will work as expected if you don't install
