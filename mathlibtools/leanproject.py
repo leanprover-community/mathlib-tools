@@ -149,7 +149,9 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
 @click.argument('directory', default='')
 @click.option('--new-branch', '-b', default=False, is_flag=True,
               help='Create a new branch.')
-def get_project(name: str, new_branch: bool, directory: str = '') -> None:
+@click.option('--shallow', '-s', default=True, is_flag=True,
+              help: 'Clone only the first layer of Git history, to save space.')
+def get_project(name: str, new_branch: bool, directory: str = '', shallow: bool = True) -> None:
     """Clone a project from a GitHub name or git url.
 
     Put it in dir if this argument is given.
@@ -180,7 +182,7 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
         raise FileExistsError('Directory ' + directory + ' already exists')
     try:
         LeanProject.from_git_url(url, directory, branch, new_branch,
-                                 cache_url, force_download)
+                                 cache_url, shallow=shallow, force_download=force_download)
     except GitCommandError as err:
         handle_exception(err, 'Git command failed')
 
@@ -273,15 +275,15 @@ def global_upgrade() -> None:
     proj.upgrade_mathlib()
 
 @cli.command()
-@click.option('--to', 'to', default=None, 
+@click.option('--to', 'to', default=None,
               help='Return only imports leading to this file.')
-@click.option('--from', 'from_', default=None, 
+@click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
     """Write an import graph for this project.
-    
-    Arguments for '--to' and '--from' should be specified as 
+
+    Arguments for '--to' and '--from' should be specified as
     Lean imports (e.g. 'data.mv_polynomial') rather than file names.
 
     You may specify an output filename, and the suffix will determine the output format.

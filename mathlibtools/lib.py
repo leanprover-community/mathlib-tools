@@ -482,12 +482,12 @@ class LeanProject:
     @classmethod
     def from_git_url(cls, url: str, target: str = '',
                      branch: str = '', create_branch: bool = False,
-                     cache_url: str = '',
+                     cache_url: str = '', shallow: bool = True,
                      force_download: bool = False) -> 'LeanProject':
         """Download a Lean project using git and prepare mathlib if needed."""
         log.info('Cloning from ' + url)
         target = target or url.split('/')[-1].split('.')[0]
-        repo = Repo.clone_from(url, target)
+        repo = Repo.clone_from(url, target, ['--depth=1'] if shallow else None)
         if create_branch and branch:
             try:
                 repo.git.checkout('HEAD', b=branch)
