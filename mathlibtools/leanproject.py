@@ -149,7 +149,7 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
 @click.argument('directory', default='')
 @click.option('--new-branch', '-b', default=False, is_flag=True,
               help='Create a new branch.')
-@click.option('--shallow', '-s', default=False, is_flag=True,
+@click.option('--shallow', '-s', default=True, is_flag=True,
               help='Clone only the first layer of Git history, to save space.')
 def get_project(name: str, new_branch: bool, directory: str = '', shallow: bool = True) -> None:
     """Clone a project from a GitHub name or git url.
