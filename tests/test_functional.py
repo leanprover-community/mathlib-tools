@@ -29,7 +29,7 @@ def change_mathlib_rev(rev):
     if m:
         old_rev = m.group(1)
         leanpkg.write_text(conf.replace(old_rev, rev))
-        
+
 def test_new(tmpdir):
     """Create a new package and check mathlib oleans are there."""
     chdir(tmpdir)
@@ -50,7 +50,7 @@ def test_upgrade_project(tmpdir):
     subprocess.run(['leanpkg', 'init', 'project'])
     fix_leanpkg_bug()
     leanpkg = Path('leanpkg.toml')
-    leanpkg.write_text(leanpkg.read_text() + 
+    leanpkg.write_text(leanpkg.read_text() +
             'mathlib = {git = "https://github.com/leanprover-community/mathlib",'
             'rev = "a9ed54ca0329771deab21d7574d7d19b417bf4a3"}')
     subprocess.run(['leanproject', 'upgrade-mathlib'])
@@ -68,5 +68,5 @@ def test_upgrade_mathlib(tmpdir):
 def test_get_tutorials(tmpdir):
     chdir(tmpdir)
     subprocess.run(['leanproject', 'get', 'tutorials'])
-    assert (tmpdir/'tutorials'/'src'/'first_proofs.lean').exists()
+    assert (tmpdir/'tutorials'/'src').exists()
     assert (tmpdir/'tutorials'/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
