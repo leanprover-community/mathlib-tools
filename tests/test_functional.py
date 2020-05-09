@@ -76,9 +76,12 @@ def test_new_shallow(tmpdir):
     chdir(tmpdir)
     subprocess.run(['leanproject', 'get', 'tutorials'])
     chdir(tmpdir/'tutorials')
-    assert(subprocess.run(['git', 'log', '-2', '--oneline']).returncode == 128)
+    # We did get output, but only one line of it
+    output = subprocess.check_output(['git', 'log', '-2', '--oneline'])
+    assert(len(output.splitlines()) == 1)
     chdir(tmpdir)
     rmdir(tmpdir/'tutorials')
+    # Disabling the new command line option, we now get two lines
     subprocess.run(['leanproject', 'get', 'tutorials', '--shallow=false'])
     chdir(tmpdir/'tutorials')
     output = subprocess.check_output(['git', 'log', '-2', '--oneline'])
