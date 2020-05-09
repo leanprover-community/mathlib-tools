@@ -1,5 +1,6 @@
 import os
 import re
+import shutils
 import subprocess
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def test_new_shallow(tmpdir):
     output = subprocess.check_output(['git', 'log', '-2', '--oneline'])
     assert(len(output.splitlines()) == 1)
     chdir(tmpdir)
-    rmdir(tmpdir/'tutorials')
+    shutils.rmtree(tmpdir/'tutorials')
     # Disabling the new command line option, we now get two lines
     subprocess.run(['leanproject', 'get', 'tutorials', '--shallow=false'])
     chdir(tmpdir/'tutorials')
