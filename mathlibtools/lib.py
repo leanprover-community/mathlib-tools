@@ -79,14 +79,10 @@ VersionTuple = Tuple[int, int, int]
 
 def mathlib_lean_version() -> VersionTuple:
     """Return the latest Lean release supported by mathlib"""
-    out = subprocess.run(['git', 'ls-remote', '--heads', MATHLIB_URL],
-            stdout=subprocess.PIPE, check=True).stdout.decode()
-    version = (3, 4, 1)
-    for branch in out.split('\n'):
-        m = LEAN_VERSION_RE.match(branch)
-        if m:
-            version = max(version, parse_version(m.group(2)))
-    return version
+    resp = requests.get("https://raw.githubusercontent.com/leanprover-community/mathlib/master/leanpkg.toml")
+    assert resp.status_code == 200
+    conf = toml.loads(resp.text)
+    return parse_version(conf['package']['lean_version'])
 
 def set_download_url(url: str = AZURE_URL) -> None:
     """Store the download url in .mathlib."""
@@ -664,3 +660,4 @@ class LeanProject:
             G.nodes[node]['label'] = node
         self._import_graph = G
         return G
+
