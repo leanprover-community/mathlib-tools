@@ -500,7 +500,7 @@ class LeanProject:
                 shutil.rmtree(target)
                 raise err
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
-        proj.run(['leanpkg', 'configure'])
+        proj.run_echo(['leanpkg', 'configure'])
         if 'mathlib' in proj.deps or proj.is_mathlib:
             proj.get_mathlib_olean()
         return proj
@@ -594,7 +594,7 @@ class LeanProject:
                 if mathlib_lean > self.lean_version:
                     self.lean_version = mathlib_lean
                     self.write_config()
-            self.run(['leanpkg', 'upgrade'])
+            self.run_echo(['leanpkg', 'upgrade'])
             self.read_config()
         self.get_mathlib_olean()
 
@@ -607,7 +607,7 @@ class LeanProject:
         if self.upgrade_lean:
             self.lean_version = mathlib_lean_version()
         self.write_config()
-        self.run(['leanpkg', 'add', 'leanprover-community/mathlib'])
+        self.run_echo(['leanpkg', 'add', 'leanprover-community/mathlib'])
         self.read_config()
         self.get_mathlib_olean()
 
