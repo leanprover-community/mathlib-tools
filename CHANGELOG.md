@@ -1,5 +1,9 @@
 ## Change log
 
+## 0.0.6 (2020-05-09)
+
+* Add `leanproject get -b` to create a new branch
+
 ## 0.0.5 (2020-04-07)
 
 * Add import-graph command

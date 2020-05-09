@@ -3,7 +3,7 @@
 with pkgs.python3Packages;
 buildPythonApplication {
   pname = "mathlib-tools";
-  version = "0.0.5";
+  version = "0.0.6";
   src = ./.;
 
   doCheck = false;
