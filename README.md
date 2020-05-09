@@ -51,7 +51,11 @@ project is to run:
 leanproject get tutorials
 ```
 You can specify a git branch name `my_branch` by appending 
-`:my_branch` at the end of the specified name (without space). 
+`:my_branch` at the end of the specified name (without space).
+By default this branch should be an existing branch.
+Use `leanproject get -b project_name:branch_name` to get
+the project `project_name` and then create a branch `branch_name`
+and start working on it.
 You can also specify a target directory name as a second argument to the
 command.
 
