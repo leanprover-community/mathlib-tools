@@ -68,7 +68,7 @@ def test_upgrade_mathlib(tmpdir):
 def test_get_tutorials(tmpdir):
     chdir(tmpdir)
     subprocess.run(['leanproject', 'get', 'tutorials'])
-    assert (tmpdir/'tutorials'/'src'/'first_proofs.lean').exists()
+    assert (tmpdir/'tutorials'/'src').exists()
     assert (tmpdir/'tutorials'/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
 
 def test_new_shallow(tmpdir):
