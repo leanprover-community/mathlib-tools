@@ -165,7 +165,7 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
             pass
     log.info('Looking for GitHub mathlib oleans')
     # nightlies will only store gz archives
-    download(nightly_url(rev, repo), paths[1])
+    download(nightly_url(rev, repo), DOT_MATHLIB/(rev + '.tar.gz'))
     log.info('Found GitHub mathlib oleans')
     return path
 
