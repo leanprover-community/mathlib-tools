@@ -146,7 +146,7 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
     """
 
     # we check for xz archives first
-    fnames = [rev + '.tar.xz', rev + '.tar.gz']
+    fnames = [rev + '.tar.xz', rev + '.tar.gz', rev + '.tar.bz2']
     paths = [DOT_MATHLIB/fname for fname in fnames]
     if not force:
         log.info('Looking for local mathlib oleans')
