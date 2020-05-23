@@ -1,5 +1,9 @@
 ## Change log
 
+## 0.0.7 (2020-05-23)
+
+* Try to download .xz-compressed olean archives
+
 ## 0.0.6 (2020-05-09)
 
 * Add `leanproject get -b` to create a new branch
