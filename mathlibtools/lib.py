@@ -7,6 +7,7 @@ import signal
 import re
 import os
 import stat
+import platform
 import subprocess
 from datetime import datetime
 from typing import Iterable, Union, List, Tuple, Optional
@@ -588,6 +589,11 @@ class LeanProject:
                 return
             self.rev = self.repo.commit().hexsha
         else:
+            # Try to work around a Windows bug
+            if platform.system() == 'Windows':
+                pack = self.mathlib_folder/'.git'/'objects'/'pack'
+                for path in pack.glob('*'):
+                    os.chmod(str(path), stat.S_IWRITE)
             try:
                 shutil.rmtree(str(self.mathlib_folder))
             except FileNotFoundError:
