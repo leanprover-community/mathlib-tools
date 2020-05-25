@@ -1,5 +1,9 @@
 ## Change log
 
+## 0.0.8 (2020-05-25)
+
+* Fix a bug and workaround some Windows bug
+
 ## 0.0.7 (2020-05-23)
 
 * Try to download .xz-compressed olean archives
