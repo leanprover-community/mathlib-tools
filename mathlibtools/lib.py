@@ -437,18 +437,17 @@ class LeanProject:
         # mathlib by hand and then run `leanproject get-cache`)
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
-        self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         try:
-            unpack_archive(get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                           self.force_download, self.repo),
-                       self.mathlib_folder)
+            archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
+                                           self.force_download, self.repo)
         except (EOFError, shutil.ReadError):
             log.info('Something wrong happened with the olean archive. '
                      'I will now retry downloading.')
-            unpack_archive(
-                    get_mathlib_archive(self.mathlib_rev, self.cache_url, True,
-                        self.repo),
-                    self.mathlib_folder)
+            archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
+                                          True, self.repo)
+        self.clean_mathlib()
+        self.mathlib_folder.mkdir(parents=True, exist_ok=True)
+        unpack_archive(archive, self.mathlib_folder)
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
 
@@ -570,6 +569,18 @@ class LeanProject:
         log.info('Building project '+self.name)
         self.run_echo(['leanpkg', 'build'])
 
+    def clean_mathlib(self, force: bool = False) -> None:
+        """Restore git sanity in mathlib"""
+        if self.is_mathlib and (not self.is_dirty or force):
+            self.repo.head.reset(working_tree=True)
+            return
+        if self.mathlib_folder.exists():
+            mathlib = Repo(self.mathlib_folder)
+            mathlib.head.reset(working_tree=True)
+            mathlib.git.clean('-fd')
+        else:
+            self.run_echo(['leanpkg', 'configure'])
+
     def upgrade_mathlib(self) -> None:
         """Upgrade mathlib in the project.
 
@@ -589,15 +600,7 @@ class LeanProject:
                 return
             self.rev = self.repo.commit().hexsha
         else:
-            # Try to work around a Windows bug
-            if platform.system() == 'Windows':
-                pack = self.mathlib_folder/'.git'/'objects'/'pack'
-                for path in pack.glob('*'):
-                    os.chmod(str(path), stat.S_IWRITE)
-            try:
-                shutil.rmtree(str(self.mathlib_folder))
-            except FileNotFoundError:
-                pass
+            self.clean_mathlib()
             if self.upgrade_lean:
                 mathlib_lean = mathlib_lean_version()
 

@@ -211,7 +211,7 @@ def get_cache(force: bool = False) -> None:
         handle_exception(err, 'Failed to fetch mathlib oleans')
 
 @cli.command()
-def get_mathlib_cache(force: bool = False) -> None:
+def get_mathlib_cache() -> None:
     """Get mathlib oleans without upgrading."""
     try:
         proj().get_mathlib_olean()
@@ -273,15 +273,15 @@ def global_upgrade() -> None:
     proj.upgrade_mathlib()
 
 @cli.command()
-@click.option('--to', 'to', default=None, 
+@click.option('--to', 'to', default=None,
               help='Return only imports leading to this file.')
-@click.option('--from', 'from_', default=None, 
+@click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
     """Write an import graph for this project.
-    
-    Arguments for '--to' and '--from' should be specified as 
+
+    Arguments for '--to' and '--from' should be specified as
     Lean imports (e.g. 'data.mv_polynomial') rather than file names.
 
     You may specify an output filename, and the suffix will determine the output format.
