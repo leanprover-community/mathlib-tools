@@ -261,6 +261,11 @@ def check() -> None:
         log.info('Everything looks fine.')
 
 @cli.command()
+def mk_all() -> None:
+    """Creates all.lean importing everything from the project."""
+    proj().make_all()
+
+@cli.command()
 def global_install() -> None:
     """Install mathlib user-wide."""
     proj = LeanProject.user_wide(cache_url, force_download)
@@ -299,6 +304,23 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
     else:
         G = graph
     G.write(Path(output))
+
+
+@cli.command()
+@click.argument('path', default='')
+def decls(path: str = '') -> None:
+    """List declarations seen from this project
+
+    If no file name is given, the result will be in decls.yaml
+    in the project root.
+    """
+    project = proj()
+    decls = project.list_decls()
+    outpath = Path(path) if path else project.directory/'decls.yaml'
+    with outpath.open('w') as outfile:
+        for name, info in decls.items():
+            outfile.write('{}:\n  origin: {}\n  path: {}\n  line: {}\n'.format(
+                name, info.origin, info.filepath, info.line))
 
 
 def safe_cli():

@@ -16,12 +16,13 @@ setuptools.setup(
         "console_scripts": [
             "leanproject = mathlibtools.leanproject:safe_cli",
         ]},
-    package_data = { 'mathlibtools': ['post-commit', 'post-checkout'] },
+    package_data = { 'mathlibtools': ['post-commit', 'post-checkout', 'decls.lean'] },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent" ],
     python_requires='>=3.5',
     install_requires=['toml>=0.10.0', 'PyGithub', 'certifi', 'gitpython>=2.1.11', 'requests',
-                      'Click', 'tqdm', 'paramiko>=2.7.0', 'networkx', 'pydot']
+                      'Click', 'tqdm', 'paramiko>=2.7.0', 'networkx', 'pydot',
+                      'PyYAML>=3.13']
 )

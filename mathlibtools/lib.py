@@ -9,14 +9,16 @@ import os
 import stat
 import platform
 import subprocess
+import pickle
 from datetime import datetime
-from typing import Iterable, Union, List, Tuple, Optional
+from typing import Iterable, Union, List, Tuple, Optional, Dict
 from tempfile import TemporaryDirectory
 
 import networkx as nx # type: ignore
 import requests
 from tqdm import tqdm # type: ignore
 import toml
+import yaml
 from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
@@ -285,6 +287,19 @@ class ImportGraph(nx.DiGraph):
         H = self.subgraph(set(D.nodes).intersection(A.nodes))
         H.base_path = self.base_path
         return H
+
+
+class DeclInfo:
+    def __init__(self, origin: str, filepath: Path, line: int):
+        """Implementation information for a declaration.
+        The origin argument is meant to be either 'core' or a project name,
+        including mathlib."""
+        self.origin = origin
+        self.filepath = filepath
+        self.line = line
+
+    def __repr__(self) -> str:
+        return "DeclInfo('{}', '{}', {})".format(self.origin, self.filepath, self.line)
 
 
 class LeanProject:
@@ -673,3 +688,62 @@ class LeanProject:
             G.nodes[node]['label'] = node
         self._import_graph = G
         return G
+
+    def make_all(self) -> None:
+        """Creates all.lean importing everything from the project"""
+        with (self.src_directory/'all.lean').open('w') as all_file:
+            for path in self.src_directory.glob('**/*.lean'):
+                rel = str(path.relative_to(self.src_directory).with_suffix(''))
+                if rel == 'all':
+                    continue
+                all_file.write('import ' + rel.replace(os.path.sep, '.') + '\n')
+
+    def list_decls(self) -> Dict[str, DeclInfo]:
+        """Collect declarations seen from this project, as a dictionary of
+        DeclInfo"""
+        all_exists = (self.src_directory/'all.lean').exists()
+        list_decls_lean = self.src_directory/'list_decls.lean'
+        try:
+            list_decls_lean.unlink()
+        except FileNotFoundError:
+            pass
+
+        print('Gathering imports')
+        self.make_all()
+        imports = (self.src_directory/'all.lean').read_text()
+        decls_lean = (Path(__file__).parent/'decls.lean').read_text()
+        list_decls_lean.write_text(imports+decls_lean)
+        print('Collecting declarations')
+        self.run(['lean', '--run', str(list_decls_lean)])
+        data = yaml.safe_load((self.directory/'decls.yaml').open())
+        list_decls_lean.unlink()
+        if not all_exists:
+            (self.src_directory/'all.lean').unlink()
+        decls = dict()
+        for name, val in data.items():
+            fname = val['File']
+            line = val['Line']
+            if fname is None or line is None:
+                continue
+            path = Path(fname)
+            if '_target' in fname:
+                path = path.relative_to(self.directory/'_target'/'deps')
+                origin = path.parts[0]
+                path = path.relative_to(Path(origin)/'src')
+            elif '.elan' in fname:
+                origin = 'core'
+                parts = path.parts
+                path = Path('/'.join(parts[parts.index('.elan')+7:]))
+            else:
+                origin = self.name
+                path = path.relative_to(self.src_directory)
+            decls[name] = DeclInfo(origin, path, int(val['Line']))
+
+        return decls
+
+    def pickle_decls(self, target: Path) -> None:
+        """Safe declaration into a pickle file target"""
+        with target.open('wb') as f:
+            pickle.dump(self.list_decls(), f, pickle.HIGHEST_PROTOCOL)
+
+
