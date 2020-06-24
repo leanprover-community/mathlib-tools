@@ -212,7 +212,7 @@ def get_cache(force: bool = False) -> None:
 
 @cli.command()
 def get_mathlib_cache() -> None:
-    """Get mathlib oleans without upgrading."""
+    """If mathlib is a dependency, upgrade mathlib lean and oleans to the version specified in the package toml."""
     try:
         proj().get_mathlib_olean()
     except (LeanDownloadError, FileNotFoundError) as err:
