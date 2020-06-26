@@ -340,7 +340,11 @@ class LeanProject:
         try:
             config = toml.load(directory/'leanpkg.toml')
         except FileNotFoundError:
-            raise InvalidLeanProject('Missing leanpkg.toml')
+            try:
+                directory = Path.cwd()
+                config = toml.load(directory/'leanpkg.toml')
+            except FileNotFoundError:
+                raise InvalidLeanProject('Missing leanpkg.toml')
 
         return cls(repo, is_dirty, rev, directory,
                    config['package'], config['dependencies'],
