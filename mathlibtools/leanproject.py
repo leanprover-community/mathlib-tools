@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Tuple, Optional
+from getpass import getpass
 
 from git.exc import GitCommandError # type: ignore
 
@@ -167,6 +168,13 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         client.connect('github.com', username='git')
+        client.close()
+        ssh = True
+    except paramiko.PasswordRequiredException:
+        password = getpass('Please provide password for encrypted SSH private key: ')
+        client = paramiko.client.SSHClient()
+        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
+        client.connect('github.com', username='git', password=password)
         client.close()
         ssh = True
     except (AssertionError, AuthenticationException, SSHException):
