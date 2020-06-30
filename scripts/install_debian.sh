@@ -12,4 +12,6 @@ code --install-extension jroesch.lean
 wget https://raw.githubusercontent.com/Kha/elan/master/elan-init.sh
 bash elan-init.sh -y
 rm elan-init.sh
-sudo pip3 install mathlibtools
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install mathlibtools
