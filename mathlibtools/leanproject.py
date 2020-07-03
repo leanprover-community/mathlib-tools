@@ -35,6 +35,7 @@ class CustomMultiCommand(click.Group):
                     cmd = super(CustomMultiCommand, self).command(
                         alias, *args[1:], **kwargs)(f)
                     cmd.short_help = "Alias for '{}'".format(_args[0])
+                    cmd.hidden = True
             else:
                 _args = args
             cmd = super(CustomMultiCommand, self).command(
@@ -42,6 +43,19 @@ class CustomMultiCommand(click.Group):
             return cmd
 
         return decorator
+
+    """Allows the user to shorten commands to a (unique) prefix."""
+    def get_command(self, ctx, cmd_name):
+        rv = click.Group.get_command(self, ctx, cmd_name)
+        if rv is not None:
+            return rv
+        matches = [x for x in self.list_commands(ctx)
+                   if x.startswith(cmd_name)]
+        if not matches:
+            return None
+        elif len(matches) == 1:
+            return click.Group.get_command(self, ctx, matches[0])
+        ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
 def proj() -> LeanProject:
     return LeanProject.from_path(Path('.'), cache_url, force_download,
