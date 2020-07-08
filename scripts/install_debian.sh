@@ -1,6 +1,6 @@
 #! /bin/bash
 
-sudo apt install -y git curl python3 python3-pip 
+sudo apt install -y git curl python3 python3-pip python3-venv
 # The following test is needed in case VScode was installed by other
 # means (e.g. using Ubuntu snap)
 if ! which code; then
@@ -12,4 +12,7 @@ code --install-extension jroesch.lean
 wget https://raw.githubusercontent.com/Kha/elan/master/elan-init.sh
 bash elan-init.sh -y
 rm elan-init.sh
-sudo pip3 install mathlibtools
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+. ~/.profile
+pipx install mathlibtools
