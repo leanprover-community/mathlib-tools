@@ -221,10 +221,14 @@ def get_cache(force: bool = False) -> None:
 @cli.command()
 def get_mathlib_cache() -> None:
     """If mathlib is a dependency, upgrade mathlib lean and oleans to the version specified in the package toml."""
-    try:
-        proj().get_mathlib_olean()
-    except (LeanDownloadError, FileNotFoundError) as err:
-        handle_exception(err, 'Failed to fetch mathlib oleans')
+    project = proj()
+    if project.is_mathlib:
+        project.get_cache()
+    else:
+        try:
+            project.get_mathlib_olean()
+        except (LeanDownloadError, FileNotFoundError) as err:
+            handle_exception(err, 'Failed to fetch mathlib oleans')
 
 @cli.command()
 def delete_zombies() -> None:
