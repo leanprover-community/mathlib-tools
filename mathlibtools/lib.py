@@ -582,7 +582,8 @@ class LeanProject:
             delete_zombies(test_dir)
 
     def build(self) -> None:
-        log.info('Building project '+self.name)
+        log.info('Building project ' + self.name)
+        self.clean_mathlib()
         self.run_echo(['leanpkg', 'build'])
 
     def clean_mathlib(self, force: bool = False) -> None:
