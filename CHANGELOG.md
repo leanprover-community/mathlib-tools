@@ -1,4 +1,10 @@
-## Change log
+# Change log
+
+## 0.0.9 (2020-07-12)
+
+* Add mk-all command
+* Add decls command
+* Many small fixes
 
 ## 0.0.8 (2020-05-25)
 
