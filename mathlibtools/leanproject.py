@@ -230,7 +230,7 @@ def get_cache(force: bool = False) -> None:
                 'The repository is dirty, please commit changes before '
                 'fetching cache, or run this command with option --force.')
     except (LeanDownloadError, FileNotFoundError) as err:
-        handle_exception(err, 'Failed to fetch mathlib oleans')
+        handle_exception(err, 'Failed to fetch cached oleans')
 
 @cli.command()
 def get_mathlib_cache() -> None:
