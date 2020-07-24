@@ -181,7 +181,7 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
     except GitCommandError as err:
         # if full url is provided, do not retry with HTTPS
         if not is_url:
-            log.info('SSH permission denied, trying HTTPS...')
+            log.info('Error cloning via SSH, trying HTTPS...')
             try:
                 name, url, branch, is_url = parse_project_name(original_name, ssh=False)
                 LeanProject.from_git_url(url, directory, branch, new_branch,
