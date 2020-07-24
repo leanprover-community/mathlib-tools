@@ -186,8 +186,8 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
                 name, url, branch, is_url = parse_project_name(original_name, ssh=False)
                 LeanProject.from_git_url(url, directory, branch, new_branch,
                                  cache_url, force_download)
-            except GitCommandError as err:
-                handle_exception(err, err.stderr)
+            except GitCommandError as e:
+                handle_exception(e, e.stderr)
         else:
             handle_exception(err, err.stderr)
 
