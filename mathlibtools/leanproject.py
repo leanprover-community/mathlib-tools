@@ -180,7 +180,7 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
                                  cache_url, force_download)
     except GitCommandError as err:
         # if full url is provided, do not retry with HTTPS
-        if ('Permission denied' in err.stderr) and not is_url:
+        if not is_url:
             log.info('SSH permission denied, trying HTTPS...')
             try:
                 name, url, branch, is_url = parse_project_name(original_name, ssh=False)
