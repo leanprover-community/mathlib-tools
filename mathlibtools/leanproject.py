@@ -6,16 +6,6 @@ from getpass import getpass
 
 from git.exc import GitCommandError # type: ignore
 
-# paramiko depends on cryptographic libs that easily fail in half-buggy
-# environments, so let's be careful
-try:
-    import paramiko # type: ignore
-    from paramiko.ssh_exception import (       # type: ignore
-        AuthenticationException, SSHException) # type: ignore
-    PARAMIKO_OK = True
-except ImportError:
-    PARAMIKO_OK = False
-
 import click
 
 from mathlibtools.lib import (LeanProject, log, LeanDirtyRepo,
@@ -124,9 +114,9 @@ def build() -> None:
     """Build the current project."""
     proj().build()
 
-def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
+def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str, bool]:
     """Parse the name argument for get_project
-    Returns (name, url, branch).
+    Returns (name, url, branch, is_url).
     If name is not a full url, the returned url will be a https or ssh
     url depending on the boolean argument ssh.
     """
@@ -153,11 +143,13 @@ def parse_project_name(name: str, ssh: bool = True) -> Tuple[str, str, str]:
             url = 'git@github.com:'+org_name+'.git'
         else:
             url = 'https://github.com/'+org_name+'.git'
+        is_url = False
     else:
         url = name
         name = name.split('/')[-1].replace('.git', '')
+        is_url = True
 
-    return name, url, branch
+    return name, url, branch, is_url
 
 @cli.command(name='get')
 @click.argument('name')
@@ -176,25 +168,8 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
     This will fail if the branch does not exist. If you want to create a new
     branch, pass the `-b` option."""
 
-    # check whether we can ssh into GitHub
-    try:
-        assert PARAMIKO_OK
-        client = paramiko.client.SSHClient()
-        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
-        client.connect('github.com', username='git')
-        client.close()
-        ssh = True
-    except paramiko.PasswordRequiredException:
-        password = getpass('Please provide password for encrypted SSH private key: ')
-        client = paramiko.client.SSHClient()
-        client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
-        client.connect('github.com', username='git', password=password)
-        client.close()
-        ssh = True
-    except (AssertionError, AuthenticationException, SSHException):
-        ssh = False
-
-    name, url, branch = parse_project_name(name, ssh)
+    original_name = name
+    name, url, branch, is_url = parse_project_name(original_name)
     if branch:
         name = name + '_' + branch
     directory = directory or name
@@ -204,7 +179,17 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
         LeanProject.from_git_url(url, directory, branch, new_branch,
                                  cache_url, force_download)
     except GitCommandError as err:
-        handle_exception(err, 'Git command failed')
+        # if full url is provided, do not retry with HTTPS
+        if not is_url:
+            log.info('Error cloning via SSH, trying HTTPS...')
+            try:
+                name, url, branch, is_url = parse_project_name(original_name, ssh=False)
+                LeanProject.from_git_url(url, directory, branch, new_branch,
+                                 cache_url, force_download)
+            except GitCommandError as e:
+                handle_exception(e, e.stderr)
+        else:
+            handle_exception(err, err.stderr)
 
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
