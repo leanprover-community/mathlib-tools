@@ -1,5 +1,9 @@
 # Change log
 
+## 0.0.10 (2020-07-28)
+
+* SSH handling tweaks
+
 ## 0.0.9 (2020-07-12)
 
 * Add mk-all command

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mathlibtools",
-    version="0.0.9b",
+    version="0.0.10",
     author="The mathlib community",
     description="Lean prover mathlib supporting tools.",
     long_description=long_description,
