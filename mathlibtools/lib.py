@@ -588,8 +588,7 @@ class LeanProject:
 
     def clean_mathlib(self, force: bool = False) -> None:
         """Restore git sanity in mathlib"""
-        if self.is_mathlib and (not self.is_dirty or force):
-            self.repo.head.reset(working_tree=True)
+        if self.is_mathlib:
             return
         if self.mathlib_folder.exists():
             mathlib = Repo(self.mathlib_folder)
