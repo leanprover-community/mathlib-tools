@@ -149,7 +149,7 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
     """
 
     # we check for xz archives first
-    fnames = [rev + '.tar.xz', rev + '.tar.gz', rev + '.tar.bz2']
+    fnames = [rev + '.tar.xz']
     paths = [DOT_MATHLIB/fname for fname in fnames]
     if not force:
         log.info('Looking for local mathlib oleans')
@@ -166,11 +166,6 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
             return path
         except LeanDownloadError:
             pass
-    log.info('Looking for GitHub mathlib oleans')
-    # nightlies will only store gz archives
-    path = DOT_MATHLIB / (rev + '.tar.gz')
-    download(nightly_url(rev, repo), path)
-    log.info('Found GitHub mathlib oleans')
     return path
 
 def parse_version(version: str) -> VersionTuple:
@@ -747,5 +742,3 @@ class LeanProject:
         """Safe declaration into a pickle file target"""
         with target.open('wb') as f:
             pickle.dump(self.list_decls(), f, pickle.HIGHEST_PROTOCOL)
-
-
