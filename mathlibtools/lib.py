@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import Iterable, Union, List, Tuple, Optional, Dict
 from tempfile import TemporaryDirectory
 
+import appdirs # type: ignore
 import networkx as nx # type: ignore
 import requests
 from tqdm import tqdm # type: ignore
@@ -69,7 +70,9 @@ def nightly_url(rev: str, proj_repo: Optional[Repo] = None) -> str:
     return asset.browser_download_url
 
 
-DOT_MATHLIB = Path.home()/'.mathlib'
+DOT_MATHLIB = Path(
+    os.environ.get("MATHLIB_CACHE_DIR", appdirs.user_cache_dir("mathlib")),
+)
 AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
