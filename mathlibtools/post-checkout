@@ -10,13 +10,13 @@ CHANGED_BRANCH=$3
 if [ "$CHANGED_BRANCH" -eq "1" ]; then
 	if /usr/bin/env python3 -c ""; then
 		echo "Trying to fetch cached olean"
-		leanproject get-cache
+		/usr/bin/env python3 -m leanproject get-cache
 		# If the current project is not called "mathlib", then get a mathlib cache.
 		leanpkg dump | grep --quiet 'name = "mathlib"'
 		if [ $? -ne 0 ]; then
 			leanproject get-mathlib-cache
 		fi
-		leanproject delete-zombies
+		/usr/bin/env python3 -m leanproject delete-zombies
 	else
 		echo "'env python3' failed; not running post-checkout hook"
 	fi
