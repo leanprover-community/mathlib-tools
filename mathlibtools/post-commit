@@ -7,7 +7,7 @@ export PATH=$PATH:/usr/local/bin
 # if python3 isn't available, we don't generate an error; just a message
 if /usr/bin/env python3 -c ""; then
 	echo "Caching olean..."
-	/usr/bin/env python3 -m leanproject mk-cache
+	leanproject mk-cache
 else
     echo "'env python3' failed; not running post-commit hook"
 fi
