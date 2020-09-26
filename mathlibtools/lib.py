@@ -716,7 +716,7 @@ class LeanProject:
         decls_lean = (Path(__file__).parent/'decls.lean').read_text()
         list_decls_lean.write_text(imports+decls_lean)
         print('Collecting declarations')
-        self.run(['lean', '--run', str(list_decls_lean)])
+        self.run_echo(['lean', '--run', str(list_decls_lean)])
         data = yaml.safe_load((self.directory/'decls.yaml').open())
         list_decls_lean.unlink()
         if not all_exists:
