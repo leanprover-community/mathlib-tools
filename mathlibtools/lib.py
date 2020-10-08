@@ -157,8 +157,8 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
             return path
     log.info('Looking for remote mathlib oleans')
     base_url = url or get_download_url()
-    download(base_url+fname, path)
-    log.info('Found mathlib oleans at '+base_url)
+    download(base_url + fname, path)
+    log.info('Found mathlib oleans at ' + base_url)
     return path
 
 def parse_version(version: str) -> VersionTuple:
