@@ -148,24 +148,21 @@ def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
     Return the archive Path. Will raise LeanDownloadError if nothing works.
     """
 
-    # we check for xz archives first
-    fnames = [rev + '.tar.xz']
-    paths = [DOT_MATHLIB/fname for fname in fnames]
+    fname = rev + '.tar.xz'
+    path = DOT_MATHLIB/fname
     if not force:
         log.info('Looking for local mathlib oleans')
-        for path in paths:
-            if path.exists():
-                log.info('Found local mathlib oleans')
-                return path
-    log.info('Looking for remote mathlib oleans')
-    for fname, path in zip(fnames, paths):
-        try:
-            base_url = url or get_download_url()
-            download(base_url+fname, path)
-            log.info('Found mathlib oleans at '+base_url)
+        if path.exists():
+            log.info('Found local mathlib oleans')
             return path
-        except LeanDownloadError:
-            pass
+    log.info('Looking for remote mathlib oleans')
+    try:
+        base_url = url or get_download_url()
+        download(base_url+fname, path)
+        log.info('Found mathlib oleans at '+base_url)
+        return path
+    except LeanDownloadError:
+        pass
     return path
 
 def parse_version(version: str) -> VersionTuple:
