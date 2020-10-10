@@ -47,7 +47,9 @@ class LeanDirtyRepo(Exception):
 class InvalidLeanVersion(Exception):
     pass
 
-DOT_MATHLIB = Path.home()/'.mathlib'
+DOT_MATHLIB = Path(os.environ.get("MATHLIB_CACHE_DIR") or
+                   Path.home()/'.mathlib')
+
 AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
