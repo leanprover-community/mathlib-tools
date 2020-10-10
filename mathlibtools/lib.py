@@ -47,28 +47,6 @@ class LeanDirtyRepo(Exception):
 class InvalidLeanVersion(Exception):
     pass
 
-def nightly_url(rev: str, proj_repo: Optional[Repo] = None) -> str:
-    """From a git rev, try to find an asset name and url, using the Github
-    authentication provided in auth."""
-    auth = auth_github(proj_repo) if proj_repo else Github()
-    repo = auth.get_repo("leanprover-community/mathlib-nightly")
-    tags = {tag.name: tag.commit.sha for tag in repo.get_tags()}
-    try:
-        release = next(r for r in repo.get_releases()
-                           if r.tag_name.startswith('nightly-') and
-                           tags[r.tag_name] == rev)
-    except StopIteration:
-        raise LeanDownloadError('Error: no nightly archive found')
-
-    try:
-        asset = next(x for x in release.get_assets()
-                     if x.name.startswith('mathlib-olean-nightly-'))
-    except StopIteration:
-        raise LeanDownloadError("Error: Release " + release.tag_name +
-               " does not contains a olean archive (this shouldn't happen...)")
-    return asset.browser_download_url
-
-
 DOT_MATHLIB = Path.home()/'.mathlib'
 AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
