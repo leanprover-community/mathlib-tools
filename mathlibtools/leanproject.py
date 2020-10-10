@@ -206,10 +206,11 @@ def mk_cache(force: bool = False) -> None:
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
               help='Get cache even if the repository is dirty.')
-def get_cache(force: bool = False) -> None:
+@click.option('--rev', default=None, help='A git sha.')
+def get_cache(rev: Optional[str] = None, force: bool = False) -> None:
     """Restore cached olean files."""
     try:
-        proj().get_cache(force)
+        proj().get_cache(rev, force)
     except LeanDirtyRepo as err:
         handle_exception(err,
                 'The repository is dirty, please commit changes before '
@@ -218,16 +219,14 @@ def get_cache(force: bool = False) -> None:
         handle_exception(err, 'Failed to fetch cached oleans')
 
 @cli.command()
-def get_mathlib_cache() -> None:
-    """If mathlib is a dependency, upgrade mathlib lean and oleans to the version specified in the package toml."""
+@click.option('--rev', default=None, help='A git sha.')
+def get_mathlib_cache(rev: Optional[str] = None) -> None:
+    """Get mathlib .lean and .olean files, without upgrading."""
     project = proj()
-    if project.is_mathlib:
-        project.get_cache()
-    else:
-        try:
-            project.get_mathlib_olean()
-        except (LeanDownloadError, FileNotFoundError) as err:
-            handle_exception(err, 'Failed to fetch mathlib oleans')
+    try:
+        project.get_mathlib_olean(rev)
+    except (LeanDownloadError, FileNotFoundError) as err:
+        handle_exception(err, 'Failed to fetch mathlib oleans')
 
 @cli.command()
 def delete_zombies() -> None:

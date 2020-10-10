@@ -427,23 +427,26 @@ class LeanProject:
                         "'rev':", 'rev =').replace("'", '"')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
-    def get_mathlib_olean(self) -> None:
-        """Get precompiled mathlib oleans for this project."""
+    def get_mathlib_olean(self, rev: Optional[str] = None) -> None:
+        """Get precompiled mathlib oleans for this project, at a specific
+        commit if rev is provided."""
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
         try:
-            archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                          self.force_download)
+            archive = get_mathlib_archive(rev or self.mathlib_rev,
+                                          self.cache_url, self.force_download)
         except (EOFError, shutil.ReadError):
             log.info('Something wrong happened with the olean archive. '
                      'I will now retry downloading.')
-            archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                          True)
+            archive = get_mathlib_archive(rev or self.mathlib_rev,
+                                          self.cache_url, True)
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(archive, self.mathlib_folder)
+        if rev:
+            self.delete_zombies()
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
 
@@ -462,7 +465,7 @@ class LeanProject:
         pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']),
              archive)
 
-    def get_cache(self, force: bool = False, url:str = '') -> None:
+    def get_cache(self, rev: Optional[str] = None, force: bool = False) -> None:
         """Tries to get olean cache.
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
@@ -470,9 +473,9 @@ class LeanProject:
         if self.is_dirty and not force:
             raise LeanDirtyRepo
         if self.is_mathlib:
-            self.get_mathlib_olean()
+            self.get_mathlib_olean(rev)
         else:
-            unpack_archive(self.directory/'_cache'/(str(self.rev)+'.tar.bz2'),
+            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.bz2'),
                            self.directory)
 
     @classmethod
