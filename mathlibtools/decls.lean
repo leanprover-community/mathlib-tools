@@ -1,4 +1,4 @@
-import meta.expr system.io
+import data.list.sort meta.expr system.io
 
 open tactic declaration environment io io.fs (put_str_ln close)
 
