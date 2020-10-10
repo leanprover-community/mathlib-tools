@@ -334,12 +334,21 @@ def decls(path: str = '') -> None:
                 name, info.origin, info.filepath, info.line))
 
 
+@cli.command()
+@click.argument('branch_name')
+@click.option('--force', default=False, is_flag=True,
+              help='Update master and create branch even if the repository is dirty.')
+def pr(branch_name: str, force: bool = False) -> None:
+    """Prepare to work on a mathlib pull-request on a new branch."""
+    proj().pr(branch_name, force)
+
+
 def safe_cli():
     try:
         cli() # pylint: disable=no-value-for-parameter
     except Exception as err:
         handle_exception(err, str(err))
-        
+
 if __name__ == "__main__":
     # This allows `python3 -m mathlibtools.leanproject`.
     # This is useful for when python is on the path but its installed scripts are not

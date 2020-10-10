@@ -733,3 +733,20 @@ class LeanProject:
         """Safe declaration into a pickle file target"""
         with target.open('wb') as f:
             pickle.dump(self.list_decls(), f, pickle.HIGHEST_PROTOCOL)
+
+    def pr(self, branch_name: str, force: bool = False) -> None:
+        """
+        Prepare to work on a mathlib pull-request on a new branch.
+        This will check for a clean working copy unless force is True.
+        """
+        if self.is_dirty and not force:
+            raise LeanDirtyRepo
+        if not self.is_mathlib:
+            print('This operation is for mathlib only.')
+            return
+        if not self.repo:
+            print('This project has no git repository.')
+            return
+        self.repo.git.checkout('master')
+        self.upgrade_mathlib()
+        self.repo.git.checkout('-b', branch_name)
