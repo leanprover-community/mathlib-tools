@@ -119,8 +119,7 @@ def download(url: str, target: Path) -> None:
         raise LeanDownloadError('Failed to download ' + url)
 
 
-def get_mathlib_archive(rev: str, url:str = '', force: bool = False,
-                        repo: Optional[Repo] = None) -> Path:
+def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
 
     Return the archive Path. Will raise LeanDownloadError if nothing works.
@@ -192,6 +191,19 @@ def touch_oleans(path: Path) -> None:
     now = datetime.now().timestamp()
     for p in path.glob('**/*.olean'):
         os.utime(str(p), (now, now))
+
+def find_root(path: Path) -> Path:
+    """
+    Find a Lean project root in path by searching for leanpkg.toml in path and
+    its ancestors.
+    """
+    if (path/'leanpkg.toml').exists():
+        return path
+    parent = path.parent
+    if parent != path:
+        return find_root(path.parent)
+    else:
+        raise InvalidLeanProject('Could not find a leanpkg.toml')
 
 class ImportGraph(nx.DiGraph):
     def __init__(self, base_path: Optional[Path] = None) -> None:
@@ -270,7 +282,7 @@ class DeclInfo:
 
 
 class LeanProject:
-    def __init__(self, repo: Repo, is_dirty: bool, rev: str, directory: Path,
+    def __init__(self, repo: Optional[Repo], is_dirty: bool, rev: str, directory: Path,
             pkg_config: dict, deps: dict,
             cache_url: str = '', force_download: bool = False,
             upgrade_lean: bool = True) -> None:
@@ -295,19 +307,19 @@ class LeanProject:
         try:
             repo = Repo(path, search_parent_directories=True)
         except InvalidGitRepositoryError:
-            raise InvalidLeanProject('Invalid git repository')
-        if repo.bare:
-            raise InvalidLeanProject('Git repository is not initialized')
-        is_dirty = repo.is_dirty()
-        try:
-            rev = repo.commit().hexsha
-        except ValueError:
+            repo = None
+            is_dirty = False
             rev = ''
-        directory = Path(repo.working_dir)
-        try:
-            config = toml.load(directory/'leanpkg.toml')
-        except FileNotFoundError:
-            raise InvalidLeanProject('Missing leanpkg.toml')
+        if repo:
+            if repo.bare:
+                raise InvalidLeanProject('Git repository is not initialized')
+            is_dirty = repo.is_dirty()
+            try:
+                rev = repo.commit().hexsha
+            except ValueError:
+                rev = ''
+        directory = find_root(path)
+        config = toml.load(directory/'leanpkg.toml')
 
         return cls(repo, is_dirty, rev, directory,
                    config['package'], config['dependencies'],
@@ -421,12 +433,12 @@ class LeanProject:
             self.run(['leanpkg', 'configure'])
         try:
             archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                           self.force_download, self.repo)
+                                          self.force_download)
         except (EOFError, shutil.ReadError):
             log.info('Something wrong happened with the olean archive. '
                      'I will now retry downloading.')
             archive = get_mathlib_archive(self.mathlib_rev, self.cache_url,
-                                          True, self.repo)
+                                          True)
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(archive, self.mathlib_folder)
@@ -506,6 +518,7 @@ class LeanProject:
         proj.lean_version = mathlib_lean_version()
         proj.write_config()
         proj.add_mathlib()
+        assert proj.repo
         proj.repo.git.checkout('-b', 'master')
         return proj
 
@@ -555,6 +568,7 @@ class LeanProject:
     def clean_mathlib(self, force: bool = False) -> None:
         """Restore git sanity in mathlib"""
         if self.is_mathlib and (not self.is_dirty or force):
+            assert self.repo
             self.repo.head.reset(working_tree=True)
             return
         if self.mathlib_folder.exists():
@@ -571,6 +585,7 @@ class LeanProject:
         we want.
         """
         if self.is_mathlib:
+            assert self.repo
             try:
                 rem = next(remote for remote in self.repo.remotes
                            if any('leanprover' in url
@@ -608,6 +623,9 @@ class LeanProject:
         self.get_mathlib_olean()
 
     def setup_git_hooks(self) -> None:
+        if self.repo is None:
+            print('This project has no git repository.')
+            return
         hook_dir = Path(self.repo.git_dir)/'hooks'
         src = Path(__file__).parent
         print('This script will copy post-commit and post-checkout scripts to ', hook_dir)
