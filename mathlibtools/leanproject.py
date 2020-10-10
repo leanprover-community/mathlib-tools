@@ -343,6 +343,16 @@ def pr(branch_name: str, force: bool = False) -> None:
     proj().pr(branch_name, force)
 
 
+@cli.command()
+@click.option('--force', default=False, is_flag=True,
+              help='Rebase on master even if the repository is dirty.')
+def rebase(force: bool = False) -> None:
+    """
+    On mathlib, update master, get oleans and rebase current branch.
+    """
+    proj().rebase(force)
+
+
 def safe_cli():
     try:
         cli() # pylint: disable=no-value-for-parameter

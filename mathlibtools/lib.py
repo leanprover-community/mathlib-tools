@@ -750,3 +750,25 @@ class LeanProject:
         self.repo.git.checkout('master')
         self.upgrade_mathlib()
         self.repo.git.checkout('-b', branch_name)
+
+    def rebase(self, force: bool = False) -> None:
+        """
+        On mathlib, update master, get oleans and rebase current branch.
+        This will check for a clean working copy unless force is True.
+        """
+        if self.is_dirty and not force:
+            raise LeanDirtyRepo
+        if not self.is_mathlib:
+            print('This operation is for mathlib only.')
+            return
+        if not self.repo:
+            print('This project has no git repository.')
+            return
+        branch = self.repo.active_branch
+        if branch.name == 'master':
+            print('This does not make sense now since you are on master.')
+            return
+        self.repo.git.checkout('master')
+        self.upgrade_mathlib()
+        self.repo.git.checkout(branch)
+        self.repo.git.rebase('master')
