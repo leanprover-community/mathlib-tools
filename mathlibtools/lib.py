@@ -69,7 +69,9 @@ def nightly_url(rev: str, proj_repo: Optional[Repo] = None) -> str:
     return asset.browser_download_url
 
 
-DOT_MATHLIB = Path.home()/'.mathlib'
+DOT_MATHLIB = Path(
+    os.environ.get('MATHLIB_CACHE_DIR', '~/.mathlib'),
+).expanduser()
 AZURE_URL = 'https://oleanstorage.azureedge.net/mathlib/'
 
 DOT_MATHLIB.mkdir(parents=True, exist_ok=True)
