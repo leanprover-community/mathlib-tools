@@ -432,6 +432,8 @@ class LeanProject:
         commit if rev is provided."""
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
+        if self.is_mathlib and rev:
+            rev = self.repo.rev_parse(rev).hexsha
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
         try:
@@ -475,6 +477,8 @@ class LeanProject:
         if self.is_mathlib:
             self.get_mathlib_olean(rev)
         else:
+            if rev:
+                rev = self.repo.rev_parse(rev).hexsha
             unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.bz2'),
                            self.directory)
 
