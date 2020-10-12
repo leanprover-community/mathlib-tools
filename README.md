@@ -14,10 +14,12 @@ Read what what remains of this section only if you want more details
 about this specific part of the procedure (the tools described here won't give
 you anything if Lean itself is not available).
 
-Those tools use python3, at least python 3.5, which is the oldest
+### Released version
+
+The tools in this repository use python3, at least python 3.5, which is the oldest
 version of python supported by the python foundation. They can be
 installed using [pip](https://pypi.org/project/mathlibtools/). The basic
-install command is thus:
+install command for the latest released version is thus:
 ```
 pip install mathlibtools
 ```
@@ -50,6 +52,8 @@ If you are using NixOS, you can also install mathlib tools using the bundled `de
 ```
 nix-env -if https://github.com/leanprover-community/mathlib-tools/archive/master.tar.gz
 ```
+
+### Development version
 
 If you want to use the latest development version, you can clone this
 repository, go to the repository folder, and run `pip install .`.
