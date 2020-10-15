@@ -433,6 +433,7 @@ class LeanProject:
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
         if self.is_mathlib and rev:
+            assert self.repo
             rev = self.repo.rev_parse(rev).hexsha
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
@@ -472,6 +473,9 @@ class LeanProject:
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
         """
+        if not self.repo:
+            print("This project has no git repository.")
+            return
         if self.is_dirty and not force:
             raise LeanDirtyRepo
         if self.is_mathlib:
