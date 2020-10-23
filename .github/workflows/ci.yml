@@ -39,8 +39,12 @@ jobs:
     - name: Install elan
       run: |
           curl https://raw.githubusercontent.com/Kha/elan/master/elan-init.sh -sSf | sh -s -- --default-toolchain leanprover-community/lean:3.5.1 -y 
-          echo "##[add-path]$HOME/.elan/bin"
-      shell: bash
+    - name: Add Lean to PATH
+      run: echo "$HOME/.elan/bin/" >> $GITHUB_PATH
+      if: runner.os != 'Windows'
+    - name: Add Lean to PATH
+      run: echo "${HOME}/.elan/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      if: runner.os == 'Windows'
     - name: Install tox
       run: python -m pip install tox
     - name: Run tox
