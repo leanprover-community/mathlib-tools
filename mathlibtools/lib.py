@@ -201,9 +201,9 @@ def find_root(path: Path) -> Path:
     """
     if (path/'leanpkg.toml').exists():
         return path
-    parent = path.parent
+    parent = path.absolute().parent
     if parent != path:
-        return find_root(path.parent)
+        return find_root(parent)
     else:
         raise InvalidLeanProject('Could not find a leanpkg.toml')
 
