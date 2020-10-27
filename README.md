@@ -16,7 +16,7 @@ you anything if Lean itself is not available).
 
 ### Released version
 
-The tools in this repository use python3, at least python 3.5, which is the oldest
+The tools in this repository use python3, at least python 3.6, which is the oldest
 version of python supported by the python foundation. They can be
 installed using [pip](https://pypi.org/project/mathlibtools/). The basic
 install command for the latest released version is thus:
@@ -32,8 +32,7 @@ to install it in your home directory, and then make sure that
 `$HOME/.local/bin/` is in your shell path. 
 
 Alternatively, a convenient way to hide those issues is to use
-[pipx](https://pipxproject.github.io/pipx/) (this requires python 3.6 or
-newer). On Linux, you can do:
+[pipx](https://pipxproject.github.io/pipx/). On Linux, you can do:
 ```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
