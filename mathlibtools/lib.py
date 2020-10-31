@@ -47,6 +47,9 @@ class LeanDirtyRepo(Exception):
 class InvalidLeanVersion(Exception):
     pass
 
+class LeanProjectError(Exception):
+    pass
+
 DOT_MATHLIB = Path(os.environ.get("MATHLIB_CACHE_DIR") or
                    Path.home()/'.mathlib')
 
@@ -474,10 +477,9 @@ class LeanProject:
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
         """
         if not self.repo:
-            print("This project has no git repository.")
-            return
+            raise LeanProjectError('This project has no git repository.')
         if self.is_dirty and not force:
-            raise LeanDirtyRepo
+            raise LeanDirtyRepo('Cannot get cache for a dirty repository.')
         if self.is_mathlib:
             self.get_mathlib_olean(rev)
         else:
@@ -603,6 +605,7 @@ class LeanProject:
                 rem = next(remote for remote in self.repo.remotes
                            if any('leanprover' in url
                                   for url in remote.urls))
+                log.info('Pulling...')
                 rem.pull(self.repo.active_branch)
             except (StopIteration, GitCommandError):
                 log.info("Couldn't pull from a relevant git remote. "
@@ -637,11 +640,10 @@ class LeanProject:
 
     def setup_git_hooks(self) -> None:
         if self.repo is None:
-            print('This project has no git repository.')
-            return
+            raise LeanProjectError('This project has no git repository.')
         hook_dir = Path(self.repo.git_dir)/'hooks'
         src = Path(__file__).parent
-        print('This script will copy post-commit and post-checkout scripts to ', hook_dir)
+        log.info('This script will copy post-commit and post-checkout scripts to ', hook_dir)
         rep = input("Do you want to proceed (y/n)? ")
         if rep in ['y', 'Y']:
             shutil.copy(str(src/'post-commit'), str(hook_dir))
@@ -650,9 +652,9 @@ class LeanProject:
             shutil.copy(str(src/'post-checkout'), str(hook_dir))
             mode = (hook_dir/'post-checkout').stat().st_mode
             (hook_dir/'post-checkout').chmod(mode | stat.S_IXUSR)
-            print("Successfully copied scripts")
+            log.info("Successfully copied scripts")
         else:
-                print("Cancelled...")
+            log.info("Cancelled...")
 
     def check_timestamps(self) -> Tuple[bool, bool]:
         """Check that core and mathlib oleans are more recent than their
@@ -707,12 +709,12 @@ class LeanProject:
         except FileNotFoundError:
             pass
 
-        print('Gathering imports')
+        log.info('Gathering imports')
         self.make_all()
         imports = (self.src_directory/'all.lean').read_text()
         decls_lean = (Path(__file__).parent/'decls.lean').read_text()
         list_decls_lean.write_text(imports+decls_lean)
-        print('Collecting declarations')
+        log.info('Collecting declarations')
         self.run_echo(['lean', '--run', str(list_decls_lean)])
         data = yaml.safe_load((self.directory/'decls.yaml').open())
         list_decls_lean.unlink()
@@ -753,17 +755,18 @@ class LeanProject:
         if self.is_dirty and not force:
             raise LeanDirtyRepo
         if not self.is_mathlib:
-            print('This operation is for mathlib only.')
-            return
+            raise LeanProjectError('This operation is for mathlib only.')
         if not self.repo:
-            print('This project has no git repository.')
-            return
+            raise LeanProjectError('This project has no git repository.')
         if branch_name in self.repo.branches:
-            print(f'The branch {branch_name} already exists, please choose another name.')
-            return
+            raise LeanProjectError(f'The branch {branch_name} already exists, '
+                                    'please choose another name.')
+        log.info('Checking out master...')
         self.repo.git.checkout('master')
         self.upgrade_mathlib()
+        log.info('Checking out new branch...')
         self.repo.git.checkout('-b', branch_name)
+        log.info('Done.')
 
     def rebase(self, force: bool = False) -> None:
         """
@@ -771,18 +774,20 @@ class LeanProject:
         This will check for a clean working copy unless force is True.
         """
         if self.is_dirty and not force:
-            raise LeanDirtyRepo
+            raise LeanDirtyRepo('Cannot rebase because repository is dirty')
         if not self.is_mathlib:
-            print('This operation is for mathlib only.')
-            return
+            raise LeanProjectError('This operation is for mathlib only.')
         if not self.repo:
-            print('This project has no git repository.')
-            return
+            raise LeanProjectError('This project has no git repository.')
         branch = self.repo.active_branch
         if branch.name == 'master':
-            print('This does not make sense now since you are on master.')
-            return
+            raise LeanProjectError('This does not make sense now '
+                                   'since you are on master.')
+        log.info('Checking out master...')
         self.repo.git.checkout('master')
         self.upgrade_mathlib()
+        log.info(f'Checking out {branch}...')
         self.repo.git.checkout(branch)
+        log.info('Rebasing...')
         self.repo.git.rebase('master')
+        log.info('Done')
