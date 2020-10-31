@@ -26,20 +26,20 @@ if needed).
 Once the package is installed, you can run `pytest` from the toplevel
 folder.
 
-Our continuous integration tests use python 3.5 to 3.8. 
+Our continuous integration tests use python 3.6 to 3.9. 
 This can be done locally using
 [tox](https://tox.readthedocs.io/en/latest/). For this you need `tox`
 of course, but also various versions of python. One convenient way
 to ensure that is to use [pyenv](https://github.com/pyenv/pyenv).
-After setting up `pyenv` and installing, say python 3.5.6, 3.6.8,
-3.7.2 and 3.8.0 (using `pyenv install 3.5.6` etc.), you can create,
+After setting up `pyenv` and installing, say python 3.6.8, 3.7.2, 
+3.8.0 and 3.9.0 (using `pyenv install 3.6.8` etc.), you can create,
 inside the toplevel folder of your working copy, a
 file `.python-version` containing
 ```
+3.9.0
 3.8.0
 3.7.2
 3.6.8
-3.5.6
 ```
 Then you can run `tox` to run our test suite against all those versions
 of python.
