@@ -758,6 +758,9 @@ class LeanProject:
         if not self.repo:
             print('This project has no git repository.')
             return
+        if branch_name in self.repo.branches:
+            print(f'The branch {branch_name} already exists, please choose another name.')
+            return
         self.repo.git.checkout('master')
         self.upgrade_mathlib()
         self.repo.git.checkout('-b', branch_name)
