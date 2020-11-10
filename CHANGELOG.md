@@ -1,5 +1,14 @@
 # Change log
 
+## 1.0.1 (2020-11-10)
+
+* Only look for .xz archives
+* Increase tolerance to weird git setups
+* Add pr command
+* Add rebase command
+* Add option --rev to get-cache and get-mathlib-cache
+* Drop python 3.5 support
+
 ## 0.0.10 (2020-07-28)
 
 * SSH handling tweaks
