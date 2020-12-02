@@ -679,7 +679,7 @@ class LeanProject:
             imports = self.run(['lean', '--deps', str(path)])
             for imp in map(Path, imports.split()):
                 try:
-                    imp_rel = imp.relative_to(self.src_directory)
+                    imp_rel = imp.relative_to(self.src_directory.resolve())
                 except ValueError:
                     # This import is not from the project
                     continue
