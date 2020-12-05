@@ -582,11 +582,11 @@ class LeanProject:
 
     def clean_mathlib(self, force: bool = False) -> None:
         """Restore git sanity in mathlib"""
-        if self.is_mathlib and (not self.is_dirty or force):
-            assert self.repo
-            self.repo.head.reset(working_tree=True)
-            return
-        if self.mathlib_folder.exists():
+        if self.is_mathlib:
+            if not self.is_dirty or force:
+                assert self.repo
+                self.repo.head.reset(working_tree=True)
+        elif self.mathlib_folder.exists():
             mathlib = Repo(self.mathlib_folder)
             mathlib.head.reset(working_tree=True)
             mathlib.git.clean('-fd')
