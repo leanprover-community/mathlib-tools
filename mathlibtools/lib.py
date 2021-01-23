@@ -295,7 +295,7 @@ class LeanProject:
         self.repo = repo
         self.is_dirty = is_dirty
         self.rev = rev
-        self.directory = directory
+        self.directory = directory.absolute().resolve()
         self.pkg_config = pkg_config
         self.src_directory = self.directory/pkg_config.get('path', '')
         self.deps = deps
@@ -726,7 +726,7 @@ class LeanProject:
             line = val['Line']
             if fname is None or line is None:
                 continue
-            path = Path(fname)
+            path = Path(fname).absolute().resolve()
             if '_target' in fname:
                 path = path.relative_to(self.directory/'_target'/'deps')
                 origin = path.parts[0]
