@@ -451,7 +451,7 @@ class LeanProject:
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(archive, self.mathlib_folder)
-        if rev:
+        if rev or self.is_dirty:
             self.delete_zombies()
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
@@ -478,8 +478,11 @@ class LeanProject:
         """
         if not self.repo:
             raise LeanProjectError('This project has no git repository.')
-        if self.is_dirty and not force:
-            raise LeanDirtyRepo('Cannot get cache for a dirty repository.')
+        if self.is_dirty and rev is None and not force:
+            # if the user passed `rev`, they deliberately want a cache that does
+            # not match their local changes anyway.
+            raise LeanDirtyRepo('Getting the cache may result in a '
+                                'time-consuming rebuild.')
         if self.is_mathlib:
             self.get_mathlib_olean(rev)
         else:
@@ -583,9 +586,8 @@ class LeanProject:
     def clean_mathlib(self, force: bool = False) -> None:
         """Restore git sanity in mathlib"""
         if self.is_mathlib:
-            if not self.is_dirty or force:
-                assert self.repo
-                self.repo.head.reset(working_tree=True)
+            # the mathlib folder contains user edited files - do not touch it!
+            pass
         elif self.mathlib_folder.exists():
             mathlib = Repo(self.mathlib_folder)
             mathlib.head.reset(working_tree=True)
