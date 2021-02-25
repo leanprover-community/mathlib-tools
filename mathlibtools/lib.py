@@ -82,7 +82,7 @@ if not DOWNLOAD_URL_FILE.exists():
     set_download_url()
 
 def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
-    """Creates, as target, a tar.bz2 archive containing all paths from src,
+    """Creates, as target, a tar.gz archive containing all paths from src,
     relative to the folder root"""
     try:
         target.unlink()
@@ -91,7 +91,7 @@ def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
     cur_dir = Path.cwd()
     with DelayedInterrupt([signal.SIGTERM, signal.SIGINT]):
         os.chdir(str(root))
-        ar = tarfile.open(str(target), 'w|bz2')
+        ar = tarfile.open(str(target), 'w|gz')
         for src in srcs:
             ar.add(str(src.relative_to(root)))
         ar.close()
