@@ -404,7 +404,7 @@ class LeanProject:
             raise ValueError('This project has no git commit.')
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
-        archive = tgt_folder/(str(self.rev) + '.tar.bz2')
+        archive = tgt_folder/(str(self.rev) + '.tar.xz')
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
@@ -425,7 +425,7 @@ class LeanProject:
         else:
             if rev:
                 rev = self.repo.rev_parse(rev).hexsha
-            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.bz2'),
+            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.xz'),
                            self.directory)
 
     @classmethod
