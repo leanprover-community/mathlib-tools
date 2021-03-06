@@ -22,6 +22,6 @@ pipx install mathlibtools
 
 # Install and configure VS Code
 if ! which code; then
-brew cask install visual-studio-code
+brew install --cask visual-studio-code
 fi
 code --install-extension jroesch.lean
