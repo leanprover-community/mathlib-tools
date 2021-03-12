@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Tuple, Optional
 from getpass import getpass
+import networkx as nx # type: ignore
 
 from git.exc import GitCommandError # type: ignore
 
@@ -287,6 +288,20 @@ def global_upgrade() -> None:
     proj = LeanProject.user_wide(cache_url, force_download)
     proj.upgrade_mathlib()
 
+def _import_graph_(to: str = None, from_: str = None) -> nx.DiGraph:
+    project = proj()
+    graph = project.import_graph
+    if to and from_:
+        G = graph.path(start=from_, end=to)
+    elif to:
+        G = graph.ancestors(to)
+    elif from_:
+        G = graph.descendants(from_)
+    else:
+        G = graph
+    return G
+
+
 @cli.command()
 @click.option('--to', 'to', default=None,
               help='Return only imports leading to this file.')
@@ -303,17 +318,39 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
     By default the graph will be written to 'import_graph.dot'.
     For .dot, .pdf, .svg, or .png output you will need to install 'graphviz' first.
     """
-    project = proj()
-    graph = project.import_graph
-    if to and from_:
-        G = graph.path(start=from_, end=to)
-    elif to:
-        G = graph.ancestors(to)
-    elif from_:
-        G = graph.descendants(from_)
-    else:
-        G = graph
+    G = _import_graph_(to, from_)
     G.write(Path(output))
+
+
+@cli.command()
+@click.option('--sed', 'sed', default=False, is_flag=True,
+              help='Instead of printing a list of removable imports, print a sed script that can be run to remove the imports.')
+@click.argument('file', default=None, required=False)
+def reduce_imports(file: str, sed: bool = False) -> None:
+    """List imports that can be removed in the project.
+
+    Argument '--file' should be specified as a
+    Lean import (e.g. 'data.mv_polynomial') rather than a file name.
+    """
+    G = _import_graph_(to = file)
+    H = nx.transitive_reduction(G)
+    if file:
+        fs = [file]
+    else:
+        fs = G.nodes
+    for f in fs:
+        if f == "all":
+            continue
+        Gf = [e for e in G.edges if e[1] == f]
+        Hf = [e for e in H.edges if e[1] == f]
+        o = [e for e in Gf if e[1] == f and e not in H.edges]
+        if sed:
+            for df in o:
+                # probably not the right command on osx
+                print("sed -i '/^import {line}$/d' src/{file}.lean".format(file=df[1].replace(".","/"), line=df[0]))
+        else:
+            if o:
+                print(o)
 
 
 @cli.command()
