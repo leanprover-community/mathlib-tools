@@ -9,7 +9,7 @@ if ! which code; then
   rm code.deb
 fi
 code --install-extension jroesch.lean
-wget https://raw.githubusercontent.com/Kha/elan/master/elan-init.sh
+wget https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh
 bash elan-init.sh -y
 rm elan-init.sh
 python3 -m pip install --user pipx

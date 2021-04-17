@@ -13,7 +13,7 @@ brew install gmp coreutils python3 pipx
 if ! [ -r ~/.bash_profile ]; then
 echo '[ -r ~/.profile ] && source ~/.profile' >> ~/.bash_profile
 fi
-curl https://raw.githubusercontent.com/Kha/elan/master/elan-init.sh -sSf | sh
+curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
 
 # Install mathlib supporting tools
 pipx ensurepath
