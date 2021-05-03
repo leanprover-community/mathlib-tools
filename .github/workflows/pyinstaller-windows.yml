@@ -23,4 +23,3 @@ jobs:
       with:
         name: leanproject.exe
         path: mathlibtools
-        spec: leanproject.spec
