@@ -3,7 +3,6 @@ from pathlib import Path
 from datetime import datetime
 from typing import Tuple, Optional
 from getpass import getpass
-
 from git.exc import GitCommandError # type: ignore
 
 import click
