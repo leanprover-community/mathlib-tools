@@ -18,10 +18,10 @@ jobs:
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: mathlibtoolsj
-        with: leanproject.spec
+        spec: leanproject.spec
 
     - uses: actions/upload-artifact@v2
       with:
         name: name-of-artifact
         path: mathlibtools/dist/windows
-        with: leanproject.spec
+        spec: leanproject.spec
