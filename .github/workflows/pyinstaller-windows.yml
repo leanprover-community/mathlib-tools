@@ -19,9 +19,9 @@ jobs:
       with:
         path: mathlibtools
         spec: leanproject.spec
-        
+
     - uses: actions/upload-artifact@v2
       with:
         name: leanproject.exe
-        path: mathlib/dist/windows
+        path: mathlibtools/dist/windows
         spec: leanproject.spec
