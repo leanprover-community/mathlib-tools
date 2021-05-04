@@ -5,7 +5,6 @@ block_cipher = None
 
 
 a = Analysis(['leanproject.py'],
-             pathex=['C:\\Users\\hmonr\\mathlibtools\\mathlib-tools\\mathlibtools'],
              binaries=[],
              datas=[],
              hiddenimports=[],
