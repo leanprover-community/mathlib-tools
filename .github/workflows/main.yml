@@ -1,4 +1,0 @@
-- name: PyInstaller Windows
-  uses: JackMcKew/pyinstaller-action-windows@main
-    with:
-      path: mathlibtools
