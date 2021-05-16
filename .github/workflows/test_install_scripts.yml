@@ -30,5 +30,7 @@ jobs:
         python-version: ${{ matrix.python-version.name }}
     - name: Install mathlib-tools
       run: ./scripts/install_macos.sh
+    - name: Check that lean runs
+      run: lean --version
     - name: Check that leanproject runs
       run: leanproject --help
