@@ -18,3 +18,5 @@ jobs:
       run: lean --version
     - name: Check that leanproject runs
       run: leanproject --help
+    - name: Check that VSCode exists
+      run: code --version
