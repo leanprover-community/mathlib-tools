@@ -22,7 +22,7 @@ jobs:
         requirements: pyinstaller-requirements.txt
       
     - name: Test .exe file
-      run: mathlibtools/dist/windows/leanproject.exe --help
+      run: dir
 
     - uses: actions/upload-artifact@v2
       with:
