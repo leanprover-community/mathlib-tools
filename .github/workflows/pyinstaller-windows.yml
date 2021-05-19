@@ -22,9 +22,9 @@ jobs:
         requirements: pyinstaller-requirements.txt
       
     - name: Test .exe file
-      run: dir c:
-      run: dir c:\\
-      run: dir c:/
+      run: dir "c:"
+      run: dir "c:\\"
+      run: dir "c:/"
       run: path
       run: echo %cd%
 
