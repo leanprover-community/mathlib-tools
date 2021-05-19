@@ -22,7 +22,11 @@ jobs:
         requirements: pyinstaller-requirements.txt
       
     - name: Test .exe file
-      run: dir mathlibtools\\dist\\windows
+      run: dir c:
+      run: dir c:\\
+      run: dir c:/
+      run: path
+      run: echo %cd%
 
     - uses: actions/upload-artifact@v2
       with:
