@@ -19,6 +19,7 @@ jobs:
       with:
         path: mathlibtools
         spec: leanproject.spec
+        requirements: pyinstaller-requirements.txt
 
     - uses: actions/upload-artifact@v2
       with:
