@@ -22,6 +22,7 @@ jobs:
         requirements: pyinstaller-requirements.txt
       
     - name: Test .exe file
+      run: cd mathlibtools
       run: dir
 
     - uses: actions/upload-artifact@v2
