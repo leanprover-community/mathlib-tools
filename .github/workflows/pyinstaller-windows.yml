@@ -22,7 +22,7 @@ jobs:
         requirements: pyinstaller-requirements.txt
       
     - name: Test .exe file
-      shell: powershell
+      shell: cmd
       run: leanproject 
 
     - uses: actions/upload-artifact@v2
