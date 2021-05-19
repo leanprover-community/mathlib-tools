@@ -21,8 +21,6 @@ jobs:
         spec: leanproject.spec
         requirements: pyinstaller-requirements.txt
       
-    - name: Test .exe file
-      run: dir "c:"
     - name: Test 2
       run: dir "c:\\"
     - name: Test 3
