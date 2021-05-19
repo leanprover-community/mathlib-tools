@@ -23,9 +23,13 @@ jobs:
       
     - name: Test .exe file
       run: dir "c:"
+    - name: Test 2
       run: dir "c:\\"
+    - name: Test 3
       run: dir "c:/"
+    - name: Test 4
       run: path
+    - name: Test 5
       run: echo %cd%
 
     - uses: actions/upload-artifact@v2
