@@ -20,6 +20,10 @@ jobs:
         path: mathlibtools
         spec: leanproject.spec
         requirements: pyinstaller-requirements.txt
+      
+    - name: Test .exe file
+      shell: powershell
+      run: leanproject 
 
     - uses: actions/upload-artifact@v2
       with:
