@@ -1,6 +1,7 @@
 name: Package Application with Pyinstaller
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
@@ -9,28 +10,25 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: Package Application
-      uses: JackMcKew/pyinstaller-action-windows@main
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        path: mathlibtools
-        spec: leanproject.spec
-        requirements: pyinstaller-requirements.txt
-      
-    - name: Test 2
-      run: dir "c:\\"
-    - name: Test 3
-      run: dir "c:/"
-    - name: Test 4
-      run: path
-    - name: Test 5
-      run: echo %cd%
+        python-version: 3.9
+
+    - name: Install pyinstaller
+      run: python -m pip install pyinstaller -r mathlibtools/pyinstaller-requirements.txt
+
+    - name: Run pyinstaller
+      run: python -m PyInstaller mathlibtools/leanproject.spec
+
+    - name: Check the resulting exe functions
+      run: ${{ github.workspace }}/dist/leanproject.exe --help
 
     - uses: actions/upload-artifact@v2
       with:
         name: leanproject.exe
-        path: mathlibtools/dist/windows
+        path: dist/
