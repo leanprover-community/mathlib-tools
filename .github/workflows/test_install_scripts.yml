@@ -9,26 +9,14 @@ on:
 jobs:
   install_macos:
     runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version:
-          - name: 3.6
-            toxenv: py36
-          - name: 3.7
-            toxenv: py37
-          - name: 3.8
-            toxenv: py38
-          - name: 3.9
-            toxenv: py39
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version.name }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version.name }}
     - name: Install mathlib-tools
       run: ./scripts/install_macos.sh
+    - name: Check that lean runs
+      run: lean --version
     - name: Check that leanproject runs
       run: leanproject --help
+    - name: Check that VSCode exists
+      run: code --version

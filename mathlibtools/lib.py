@@ -84,7 +84,7 @@ if not DOWNLOAD_URL_FILE.exists():
     set_download_url()
 
 def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
-    """Creates, as target, a tar.bz2 archive containing all paths from src,
+    """Creates, as target, a tar.xz archive containing all paths from src,
     relative to the folder root"""
     try:
         target.unlink()
@@ -93,7 +93,7 @@ def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
     cur_dir = Path.cwd()
     with DelayedInterrupt([signal.SIGTERM, signal.SIGINT]):
         os.chdir(str(root))
-        ar = tarfile.open(str(target), 'w|bz2')
+        ar = tarfile.open(str(target), 'w|xz')
         for src in srcs:
             ar.add(str(src.relative_to(root)))
         ar.close()
@@ -404,7 +404,7 @@ class LeanProject:
             raise ValueError('This project has no git commit.')
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
-        archive = tgt_folder/(str(self.rev) + '.tar.bz2')
+        archive = tgt_folder/(str(self.rev) + '.tar.xz')
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
@@ -425,7 +425,7 @@ class LeanProject:
         else:
             if rev:
                 rev = self.repo.rev_parse(rev).hexsha
-            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.bz2'),
+            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.xz'),
                            self.directory)
 
     @classmethod
