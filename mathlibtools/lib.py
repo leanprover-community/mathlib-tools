@@ -126,10 +126,13 @@ def download_to_file(url: str, tgt: IO) -> None:
 
 def download(url: str, target: Path) -> None:
     """Download from url into the target path"""
-    with tempfile.NamedTemporaryFile(mode='wb') as temp:
-        log.info('Trying to download {} to {} (temporary file: {})'.format(url, target, temp.name))
+    temp = tempfile.NamedTemporaryFile(mode='wb', delete=False)
+    log.info('Trying to download {} to {} (temporary file: {})'.format(url, target, temp.name))
+    try:
         download_to_file(url, temp)
         shutil.copy(temp.name, target)
+    finally:
+        os.remove(temp.name)
 
 def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
