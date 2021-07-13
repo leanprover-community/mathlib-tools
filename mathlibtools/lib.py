@@ -19,6 +19,7 @@ from tqdm import tqdm # type: ignore
 import toml
 import yaml
 from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
+from atomicwrites import atomic_write
 
 if TYPE_CHECKING:
     from mathlibtools.import_graph import ImportGraph
@@ -126,13 +127,9 @@ def download_to_file(url: str, tgt: IO) -> None:
 
 def download(url: str, target: Path) -> None:
     """Download from url into the target path"""
-    temp = tempfile.NamedTemporaryFile(mode='wb', delete=False)
-    log.info('Trying to download {} to {} (temporary file: {})'.format(url, target, temp.name))
-    try:
-        download_to_file(url, temp)
-        shutil.copy(temp.name, target)
-    finally:
-        os.remove(temp.name)
+    with atomic_write(target, mode='wb', overwrite=True) as tgt:
+        log.info('Trying to download {} to {}'.format(url, target))
+        download_to_file(url, tgt)
 
 def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
