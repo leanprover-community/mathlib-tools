@@ -361,4 +361,5 @@ def safe_cli():
 if __name__ == "__main__":
     # This allows `python3 -m mathlibtools.leanproject`.
     # This is useful for when python is on the path but its installed scripts are not
+    # It also allows pyinstaller to create leanproject.exe standalone executable for Windows
     safe_cli()
