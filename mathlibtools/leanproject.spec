@@ -1,4 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
+"""
+Originally generated with `pyinstaller`.
+
+In future, we may want to use the approach described at
+https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Setuptools-Entry-Point, if we end up adding more entrypoints.
+"""
 
 
 block_cipher = None
