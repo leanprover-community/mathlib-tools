@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-Originally generated with `pyinstaller`.
+Originally generated with `pyinstaller`, with the command `pyinstaller leanproject.py`.
 
 In future, we may want to use the approach described at
 https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Setuptools-Entry-Point, if we end up adding more entrypoints.
