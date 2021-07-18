@@ -634,7 +634,7 @@ class LeanProject:
         self._import_graph = G
         return G
 
-    def reduce_imports(self, file: str, sed: bool = False) -> Iterable[str]:
+    def reduce_imports(self, file: str, sed: bool = False) -> Iterable[Any]:
         # Importing networkx slow, so don't do it until this function
         # is called.
         import networkx as nx # type: ignore
