@@ -634,6 +634,32 @@ class LeanProject:
         self._import_graph = G
         return G
 
+    def reduce_imports(self, file: str, sed: bool = False) -> Iterable[str]:
+        # Importing networkx slow, so don't do it until this function
+        # is called.
+        import networkx as nx # type: ignore
+        G = self.import_graph
+        if file:
+            G = G.ancestors(file)
+        H = nx.transitive_reduction(G)
+        if file:
+            fs = [file]
+        else:
+            fs = G.nodes
+        for f in fs:
+            if f == "all":
+                continue
+            Gf = [e for e in G.edges if e[1] == f]
+            Hf = [e for e in H.edges if e[1] == f]
+            o = [e for e in Gf if e[1] == f and e not in H.edges]
+            if sed:
+                for df in o:
+                    # probably not the right command on osx
+                    yield "sed -i '/^import {line}$/d' src/{file}.lean".format(file=df[1].replace(".","/"), line=df[0])
+            else:
+                if o:
+                    yield o
+
     def make_all(self) -> None:
         """Creates all.lean importing everything from the project"""
         with (self.src_directory/'all.lean').open('w') as all_file:
