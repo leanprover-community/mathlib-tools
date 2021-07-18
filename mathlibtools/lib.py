@@ -11,15 +11,17 @@ import platform
 import subprocess
 import pickle
 from datetime import datetime
-from typing import Iterable, Union, List, Tuple, Optional, Dict
+from typing import Iterable, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
 
-import networkx as nx # type: ignore
 import requests
 from tqdm import tqdm # type: ignore
 import toml
 import yaml
 from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
+
+if TYPE_CHECKING:
+    from mathlibtools.import_graph import ImportGraph
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
 from mathlibtools.auth_github import auth_github, Github
@@ -82,7 +84,7 @@ if not DOWNLOAD_URL_FILE.exists():
     set_download_url()
 
 def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
-    """Creates, as target, a tar.bz2 archive containing all paths from src,
+    """Creates, as target, a tar.xz archive containing all paths from src,
     relative to the folder root"""
     try:
         target.unlink()
@@ -91,7 +93,7 @@ def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
     cur_dir = Path.cwd()
     with DelayedInterrupt([signal.SIGTERM, signal.SIGINT]):
         os.chdir(str(root))
-        ar = tarfile.open(str(target), 'w|bz2')
+        ar = tarfile.open(str(target), 'w|xz')
         for src in srcs:
             ar.add(str(src.relative_to(root)))
         ar.close()
@@ -210,68 +212,6 @@ def find_root(path: Path) -> Path:
     else:
         raise InvalidLeanProject('Could not find a leanpkg.toml')
 
-class ImportGraph(nx.DiGraph):
-    def __init__(self, base_path: Optional[Path] = None) -> None:
-        """A Lean project import graph."""
-        super().__init__(self)
-        self.base_path = base_path or Path('.')
-
-    def to_dot(self, path: Optional[Path] = None) -> None:
-        """Writes itself to a graphviz dot file."""
-        path = path or self.base_path/'import_graph.dot'
-        nx.drawing.nx_pydot.to_pydot(self).write_dot(str(path))
-
-    def to_gexf(self, path: Optional[Path] = None) -> None:
-        """Writes itself to a gexf dot file, suitable for Gephi."""
-        path = path or self.base_path/'import_graph.gexf'
-        nx.write_gexf(self, str(path))
-
-    def to_graphml(self, path: Optional[Path] = None) -> None:
-        """Writes itself to a gexf dot file, suitable for yEd."""
-        path = path or self.base_path/'import_graph.graphml'
-        nx.write_graphml(self, str(path))
-
-    def write(self, path: Path):
-        if path.suffix == '.dot':
-            self.to_dot(path)
-        elif path.suffix == '.gexf':
-            self.to_gexf(path)
-        elif path.suffix == '.graphml':
-            self.to_graphml(path)
-        elif path.suffix in ['.pdf', '.svg', '.png']:
-            dot_format = '-T' + path.suffix[1:]
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                tmpf = Path(tmpdirname)/'tmp.dot'
-                self.to_dot(tmpf)
-                with path.open('w') as outf:
-                    subprocess.run(['dot', dot_format, str(tmpf)],
-                                   stdout=outf)
-        else:
-            raise ValueError('Unsupported graph output format. '
-                             'Use .dot, .gexf, .graphml or a valid '
-                             'graphviz output format (eg. .pdf).')
-
-    def ancestors(self, node: str) -> 'ImportGraph':
-        """Returns the subgraph leading to node."""
-        H = self.subgraph(nx.ancestors(self, node).union([node]))
-        H.base_path = self.base_path
-        return H
-
-    def descendants(self, node: str) -> 'ImportGraph':
-        """Returns the subgraph descending from node."""
-        H = self.subgraph(nx.descendants(self, node).union([node]))
-        H.base_path = self.base_path
-        return H
-
-    def path(self, start: str, end: str) -> 'ImportGraph':
-        """Returns the subgraph descending from the start node and used by the
-        end node."""
-        D = self.descendants(start)
-        A = self.ancestors(end)
-        H = self.subgraph(set(D.nodes).intersection(A.nodes))
-        H.base_path = self.base_path
-        return H
-
 
 class DeclInfo:
     def __init__(self, origin: str, filepath: Path, line: int):
@@ -295,7 +235,7 @@ class LeanProject:
         self.repo = repo
         self.is_dirty = is_dirty
         self.rev = rev
-        self.directory = directory
+        self.directory = directory.absolute().resolve()
         self.pkg_config = pkg_config
         self.src_directory = self.directory/pkg_config.get('path', '')
         self.deps = deps
@@ -464,7 +404,7 @@ class LeanProject:
             raise ValueError('This project has no git commit.')
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
-        archive = tgt_folder/(str(self.rev) + '.tar.bz2')
+        archive = tgt_folder/(str(self.rev) + '.tar.xz')
         if archive.exists() and not force:
             log.info('Cache for revision {} already exists'.format(self.rev))
             return
@@ -485,7 +425,7 @@ class LeanProject:
         else:
             if rev:
                 rev = self.repo.rev_parse(rev).hexsha
-            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.bz2'),
+            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.xz'),
                            self.directory)
 
     @classmethod
@@ -668,7 +608,11 @@ class LeanProject:
         return (check_core_timestamps(self.toolchain), mathlib_ok)
 
     @property
-    def import_graph(self) -> ImportGraph:
+    def import_graph(self) -> 'ImportGraph':
+        # Importing networkx + numpy is slow, so don't do it until this function
+        # is called.
+        from mathlibtools.import_graph import ImportGraph
+
         if self._import_graph:
             return self._import_graph
         G = ImportGraph(self.directory)
@@ -726,7 +670,7 @@ class LeanProject:
             line = val['Line']
             if fname is None or line is None:
                 continue
-            path = Path(fname)
+            path = Path(fname).absolute().resolve()
             if '_target' in fname:
                 path = path.relative_to(self.directory/'_target'/'deps')
                 origin = path.parts[0]
