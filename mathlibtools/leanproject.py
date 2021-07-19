@@ -327,8 +327,14 @@ def reduce_imports(file: str, sed: bool = False) -> None:
     Lean import (e.g. 'data.mv_polynomial') rather than a file name.
     """
     project = proj()
-    for l in project.reduce_imports(file=file, sed=sed):
-        print(l)
+    if sed:
+        print("# on mac use gsed instead of sed")
+        for l in project.reduce_imports_sed(file=file):
+            print(l)
+    else:
+        for t in project.reduce_imports(file=file):
+            print(t)
+
 
 @cli.command()
 @click.argument('path', default='')

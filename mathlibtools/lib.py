@@ -634,7 +634,7 @@ class LeanProject:
         self._import_graph = G
         return G
 
-    def reduce_imports(self, file: str, sed: bool = False) -> Iterable[Any]:
+    def reduce_imports(self, file: str) -> Iterable[List[Any]]:
         # Importing networkx slow, so don't do it until this function
         # is called.
         import networkx as nx # type: ignore
@@ -652,13 +652,14 @@ class LeanProject:
             Gf = [e for e in G.edges if e[1] == f]
             Hf = [e for e in H.edges if e[1] == f]
             o = [e for e in Gf if e[1] == f and e not in H.edges]
-            if sed:
-                for df in o:
-                    # probably not the right command on osx
-                    yield "sed -i '/^import {line}$/d' src/{file}.lean".format(file=df[1].replace(".","/"), line=df[0])
-            else:
-                if o:
-                    yield o
+            if o:
+                yield o
+
+    def reduce_imports_sed(self, file: str) -> Iterable[str]:
+        for o in self.reduce_imports(file):
+            for df in o:
+                # probably not the right command on osx
+                yield "sed -i '/^import {line}$/d' src/{file}.lean".format(file=df[1].replace(".","/"), line=df[0])
 
     def make_all(self) -> None:
         """Creates all.lean importing everything from the project"""
