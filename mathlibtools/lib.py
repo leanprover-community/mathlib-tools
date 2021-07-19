@@ -11,7 +11,7 @@ import platform
 import subprocess
 import pickle
 from datetime import datetime
-from typing import Iterable, Union, List, Tuple, Optional, Dict, TYPE_CHECKING, Any
+from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING, Any
 from tempfile import TemporaryDirectory
 
 import requests
@@ -19,6 +19,7 @@ from tqdm import tqdm # type: ignore
 import toml
 import yaml
 from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
+from atomicwrites import atomic_write
 
 if TYPE_CHECKING:
     from mathlibtools.import_graph import ImportGraph
@@ -103,10 +104,10 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
     """Unpack archive. This is needed for python < 3.7."""
     shutil.unpack_archive(str(fname), str(tgt_dir))
 
+def download_to_file(url: str, tgt: IO) -> None:
+    """Download from url into the file object tgt.
 
-def download(url: str, target: Path) -> None:
-    """Download from url into target"""
-    log.info('Trying to download {} to {}'.format(url, target))
+    :param tgt: a file object that has been opened in mode `wb`."""
     try:
         req = requests.get(url, stream=True)
         req.raise_for_status()
@@ -117,14 +118,18 @@ def download(url: str, target: Path) -> None:
     total_size = int(req.headers.get('content-length', 0))
     BLOCK_SIZE = 1024
     progress = tqdm(total=total_size, unit='iB', unit_scale=True)
-    with target.open('wb') as tgt:
-        for data in req.iter_content(BLOCK_SIZE):
-            progress.update(len(data))
-            tgt.write(data)
+    for data in req.iter_content(BLOCK_SIZE):
+        progress.update(len(data))
+        tgt.write(data)
     progress.close()
     if total_size != 0 and progress.n != total_size:
         raise LeanDownloadError('Failed to download ' + url)
 
+def download(url: str, target: Path) -> None:
+    """Download from url into the target path"""
+    with atomic_write(target, mode='wb', overwrite=True) as tgt:
+        log.info('Trying to download {} to {}'.format(url, target))
+        download_to_file(url, tgt)
 
 def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
     """Download a mathlib archive for revision rev into .mathlib
