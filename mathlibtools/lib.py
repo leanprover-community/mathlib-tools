@@ -639,7 +639,7 @@ class LeanProject:
         self._import_graph = G
         return G
 
-    def reduce_imports(self, file: str) -> Iterable[List[Any]]:
+    def reduce_imports(self, file: str) -> Iterable[List[Tuple[str,str]]]:
         # Importing networkx slow, so don't do it until this function
         # is called.
         import networkx as nx # type: ignore
