@@ -666,10 +666,10 @@ class LeanProject:
                 yield (f, o)
 
     def reduce_imports_sed(self, file: str) -> Iterable[str]:
-        for o in self.reduce_imports(file):
-            for df in o:
+        for src, removable in self.reduce_imports(file):
+            for r in removable:
                 # probably not the right command on osx
-                yield "sed -i '/^import {line}$/d' src/{file}.lean".format(file=df[1].replace(".","/"), line=df[0])
+                yield "sed -i '/^import {line}$/d' src/{file}.lean".format(file=src.replace(".","/"), line=r)
 
     def make_all(self) -> None:
         """Creates all.lean importing everything from the project"""
