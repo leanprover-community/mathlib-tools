@@ -640,6 +640,11 @@ class LeanProject:
         return G
 
     def reduce_imports(self, file: str) -> Iterable[List[Tuple[str, str]]]:
+        """
+        An iterator over files with removable imports, for each file yielding
+        a list of removable imports in the format
+        `("removable.import", "source.file")`.
+        """
         # Importing networkx slow, so don't do it until this function
         # is called.
         import networkx as nx # type: ignore
