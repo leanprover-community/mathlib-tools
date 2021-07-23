@@ -661,9 +661,9 @@ class LeanProject:
                 continue
             Gf = [e for e in G.edges if e[1] == f]
             Hf = [e for e in H.edges if e[1] == f]
-            o = [e for e in Gf if e[1] == f and e not in H.edges]
+            o = [e[0] for e in Gf if e[1] == f and e not in H.edges]
             if o:
-                yield o
+                yield (f, o)
 
     def reduce_imports_sed(self, file: str) -> Iterable[str]:
         for o in self.reduce_imports(file):
