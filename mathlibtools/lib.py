@@ -11,7 +11,7 @@ import platform
 import subprocess
 import pickle
 from datetime import datetime
-from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING, Any
+from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
 
 import requests
