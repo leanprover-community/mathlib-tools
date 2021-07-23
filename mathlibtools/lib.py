@@ -661,7 +661,7 @@ class LeanProject:
                 continue
             Gf = [e for e in G.edges if e[1] == f]
             Hf = [e for e in H.edges if e[1] == f]
-            o = [e[0] for e in Gf if e[1] == f and e not in H.edges]
+            o = [e[0] for e in Gf if e not in Hf]
             if o:
                 yield (f, o)
 
