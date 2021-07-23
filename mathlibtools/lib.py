@@ -643,7 +643,7 @@ class LeanProject:
         """
         An iterator over files with removable imports, for each file yielding
         a list of removable imports in the format
-        `("removable.import", "source.file")`.
+        `("source.file", ["removable.import", "another.removable.import"])`.
         """
         # Importing networkx slow, so don't do it until this function
         # is called.

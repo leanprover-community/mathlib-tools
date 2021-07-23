@@ -321,7 +321,8 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
               help='Instead of printing a list of removable imports, print a sed script that can be run to remove the imports.')
 @click.argument('file', default=None, required=False)
 def reduce_imports(file: str, sed: bool = False) -> None:
-    """List imports that can be removed in the project in the format ("removable.import", "source.file")
+    """List imports that can be removed in the project in the format 
+    `("source.file", ["removable.import", "another.removable.import"])`.
 
     Argument '--file' should be specified as a
     Lean import (e.g. 'data.mv_polynomial') rather than a file name.
