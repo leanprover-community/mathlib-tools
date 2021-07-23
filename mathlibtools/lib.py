@@ -639,7 +639,7 @@ class LeanProject:
         self._import_graph = G
         return G
 
-    def reduce_imports(self, file: str) -> Iterable[List[Tuple[str, str]]]:
+    def reduce_imports(self, file: str) -> Iterable[Tuple[str, List[str]]]:
         """
         An iterator over files with removable imports, for each file yielding
         a list of removable imports in the format
