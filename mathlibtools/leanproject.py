@@ -317,6 +317,27 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
 
 
 @cli.command()
+@click.option('--sed', 'sed', default=False, is_flag=True,
+              help='Instead of printing a list of removable imports, print a sed script that can be run to remove the imports.')
+@click.argument('file', default=None, required=False)
+def reduce_imports(file: str, sed: bool = False) -> None:
+    """List imports that can be removed in the project in the format 
+    `("source.file", ["removable.import", "another.removable.import"])`.
+
+    Argument '--file' should be specified as a
+    Lean import (e.g. 'data.mv_polynomial') rather than a file name.
+    """
+    project = proj()
+    if sed:
+        print("# on mac use gsed instead of sed")
+        for l in project.reduce_imports_sed(file=file):
+            print(l)
+    else:
+        for t in project.reduce_imports(file=file):
+            print(t)
+
+
+@cli.command()
 @click.argument('path', default='')
 def decls(path: str = '') -> None:
     """List declarations seen from this project
