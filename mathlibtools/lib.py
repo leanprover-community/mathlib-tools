@@ -645,7 +645,7 @@ class LeanProject:
         a list of removable imports in the format
         `("source.file", ["removable.import", "another.removable.import"])`.
         """
-        # Importing networkx slow, so don't do it until this function
+        # Importing networkx is slow, so don't do it until this function
         # is called.
         import networkx as nx # type: ignore
         G = self.import_graph
