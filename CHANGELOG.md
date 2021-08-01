@@ -1,6 +1,6 @@
 # Change log
 
-## 1.0.1 (2020-11-10)
+## 1.0.0 (2020-11-10)
 
 * Only look for .xz archives
 * Increase tolerance to weird git setups
