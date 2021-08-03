@@ -16,6 +16,9 @@ def dummy_repo(tmp_path):
     d = tmp_path / "repo"
     d.mkdir()
     repo = git.Repo.init(d)
+    with repo.config_writer() as cw:
+        cw.set_value("user", "name", "pytest")
+        cw.set_value("user", "email", "<>")
 
     A = repo.index.commit("A")
     B = repo.index.commit("B", parent_commits=(A,))
