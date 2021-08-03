@@ -382,6 +382,7 @@ class LeanProject:
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
         if self.is_mathlib:
+            assert self.repo
             repo = self.repo
         else:
             repo = Repo(self.mathlib_folder)

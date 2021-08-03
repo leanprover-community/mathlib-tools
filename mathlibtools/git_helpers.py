@@ -1,7 +1,5 @@
 import git
-from typing import Callable, TypeVar, Iterator, Tuple
-
-T = TypeVar('T')
+from typing import Callable, Iterator, Tuple, List
 
 
 def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
@@ -20,12 +18,7 @@ def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
     where ``A`` is the root commit and ``K`` and ``L`` are tips of branches.
     The following code runs against this commit graph
 
-    >>> def filter_fun(c):
-    ...     print('visited', c)
-    ...     if c in {B, F, G}:
-    ...         return c
     >>> for c, prune in visit_ancestors(L):
-    ...     print('visited', c)
     ...     if c in {B, F, G}:
     ...         prune()
     ...         print('found  ', c)
@@ -33,18 +26,18 @@ def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
     ...         print('visited', c)
     visited L
     visited J
-    visited I
-    visited E
-    found   F
     visited H
+    visited I
+    found   F
     found   G
+    visited E
 
     The exact order these commits appear in depends on the order of parents in
     merge commits, but independent of this ``B`` will never be visited as it is
     a parent of ``F`` and ``G``, and the sort order is topological.
     """
     repo = rev.repo
-    pruned_commits = []  # the commits to ignore along with their ancestors
+    pruned_commits : List[git.Commit] = []  # the commits to ignore along with their ancestors
     skip_n = 0  # the index to resume the iteration
     while True:
         args = [rev] + ['--not'] + pruned_commits
