@@ -20,6 +20,10 @@ def dummy_repo(tmp_path):
         cw.set_value("user", "name", "pytest")
         cw.set_value("user", "email", "<>")
 
+    # workaround for https://github.com/gitpython-developers/GitPython/pull/1314
+    import os
+    os.environ['USER'] = 'gitpython needs this to be here so it can ignore it'
+
     A = repo.index.commit("A")
     B = repo.index.commit("B", parent_commits=(A,))
     C = repo.index.commit("C", parent_commits=(B,))
