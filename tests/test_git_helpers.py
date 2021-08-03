@@ -31,12 +31,13 @@ def dummy_repo(tmp_path):
     L = repo.index.commit("L", parent_commits=(J,))
     return repo
 
+
 @pytest.mark.parametrize(['match', 'exp_found', 'exp_visited'], [
     ('L', 'L', ''),           # finding the root prunes everything else
-    ('BFG', 'FG', 'LJHIE'),   # B is pruned
+    ('BFG', 'GF', 'LJHIE'),   # B is pruned
     ('K', '', 'LJHGDIFCEBA'),  # no match, all iterated
 ])
-def test_foo(dummy_repo, match, exp_found, exp_visited):
+def test_visit_ancestors(dummy_repo, match, exp_found, exp_visited):
     assert dummy_repo.head.commit.message == 'L'
     found = []
     visited = []
