@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
 from mathlibtools.auth_github import auth_github, Github
+from mathlibtools.git_helpers import visit_ancestors
 
 log = logging.getLogger("Mathlib tools")
 log.setLevel(logging.INFO)
@@ -380,19 +381,38 @@ class LeanProject:
         commit if rev is provided."""
         # Just in case the user broke the workflow (for instance git clone
         # mathlib by hand and then run `leanproject get-cache`)
-        if self.is_mathlib and rev:
-            assert self.repo
-            rev = self.repo.rev_parse(rev).hexsha
+        if self.is_mathlib:
+            repo = self.repo
+        else:
+            repo = Repo(self.mathlib_folder)
+        commit = repo.rev_parse(rev or self.mathlib_rev)
+
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
-        try:
-            archive = get_mathlib_archive(rev or self.mathlib_rev,
+
+        archives = []
+
+        for test_rev, prune in visit_ancestors(commit):
+            try:
+                archive = get_mathlib_archive(test_rev.hexsha,
                                           self.cache_url, self.force_download)
-        except (EOFError, shutil.ReadError):
-            log.info('Something wrong happened with the olean archive. '
-                     'I will now retry downloading.')
-            archive = get_mathlib_archive(rev or self.mathlib_rev,
-                                          self.cache_url, True)
+            except LeanDownloadError:
+                log.info(f"No cache available for revision {test_rev.hexsha}")
+                pass
+            else:
+                archives.append((test_rev, archive))
+                prune()
+
+        if not archives:
+            raise LeanProjectError('No archives available for any commits!')
+
+        if len(archives) > 1:
+            archive_str = ''.join([f'\n  * {r.hexsha}' for r, ar in archives])
+            log.warn(
+                f"There are multiple viable caches, using the first:{archive_str}\n"
+                f"All caches have been downloaded; use `get-cache --rev` to select a different one")
+        _, archive = archives[0]
+
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(archive, self.mathlib_folder)
