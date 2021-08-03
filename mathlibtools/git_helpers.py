@@ -1,4 +1,4 @@
-import git
+import git   # type: ignore
 from typing import Callable, Iterator, Tuple, List
 
 
