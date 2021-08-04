@@ -411,15 +411,20 @@ class LeanProject:
         found_commit, archive = archives[0]
 
         if len(archives) > 1:
-            archive_str = ''.join([f'\n * {r.hexsha}' for r, ar in archives])
+            archive_items = ''.join([f'\n * {r.hexsha}' for r, ar in archives])
+            commit_args = ''.join([f' {r.hexsha}^!' for r, ar in archives])
             log.warn(
                 f"No cache was available for {commit.hexsha}.\n"
-                f"There are multiple viable caches from parent commits, using the first:{archive_str}\n"
-                f"All caches have been downloaded; use `get-cache --rev` to select a different one.")
+                f"There are multiple viable caches from parent commits, using the first:{archive_items}\n"
+                f"All caches have been downloaded; use `get-cache --rev` to select a different one.\n"
+                f"To see the commits in question, run:\n"
+                f"  git log --graph {commit.hexsha}{commit_args}")
         elif found_commit != commit:
             log.warn(
                 f"No cache was available for {commit.hexsha}. "
-                f"Using the cache for the ancestor {found_commit.hexsha}.")
+                f"Using the cache for the ancestor {found_commit.hexsha}.\n"
+                f"To see the intermediate commits, run:\n"
+                f"  git log --graph {commit.hexsha} {found_commit.hexsha}^!")
 
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
