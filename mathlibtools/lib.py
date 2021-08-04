@@ -391,33 +391,43 @@ class LeanProject:
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
 
+        # find all closest ancestors that have a cache
         archives = []
-
-        for test_rev, prune in visit_ancestors(commit):
+        for parent_commit, prune in visit_ancestors(commit):
             try:
-                archive = get_mathlib_archive(test_rev.hexsha,
-                                          self.cache_url, self.force_download)
+                archive = get_mathlib_archive(parent_commit.hexsha,
+                                              self.cache_url, self.force_download)
             except LeanDownloadError:
-                log.info(f"No cache available for revision {test_rev.hexsha}")
+                log.info(f"No cache available for revision {parent_commit.hexsha}")
                 pass
             else:
-                archives.append((test_rev, archive))
-                prune()
+                archives.append((parent_commit, archive))
+                prune()  # do not visit the ancestors of this commit
 
         if not archives:
+            # this should never happen unless azure goes down
             raise LeanProjectError('No archives available for any commits!')
 
+        found_commit, archive = archives[0]
+
         if len(archives) > 1:
-            archive_str = ''.join([f'\n  * {r.hexsha}' for r, ar in archives])
+            archive_str = ''.join([f'\n * {r.hexsha}' for r, ar in archives])
             log.warn(
-                f"There are multiple viable caches, using the first:{archive_str}\n"
-                f"All caches have been downloaded; use `get-cache --rev` to select a different one")
-        _, archive = archives[0]
+                f"No cache was available for {commit.hexsha}.\n"
+                f"There are multiple viable caches from parent commits, using the first:{archive_str}\n"
+                f"All caches have been downloaded; use `get-cache --rev` to select a different one.")
+        elif found_commit != commit:
+            log.warn(
+                f"No cache was available for {commit.hexsha}. "
+                f"Using the cache for the ancestor {found_commit.hexsha}.")
 
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
         unpack_archive(archive, self.mathlib_folder)
-        if rev:
+        if found_commit != repo.head.commit:
+            # If the commit we unpacked isn't HEAD, then there might be some
+            # zombie lean files around. It is probably safe, but slower, to do
+            # this unconditionally.
             self.delete_zombies()
         # Let's now touch oleans, just in case
         touch_oleans(self.mathlib_folder)
