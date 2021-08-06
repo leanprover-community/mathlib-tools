@@ -2,6 +2,11 @@ import git   # type: ignore
 from typing import Callable, Iterator, Tuple, List
 
 
+def short_sha(rev: git.Commit) -> str:
+    """ Truncate `rev.hexsha` without ambiguity """
+    return rev.repo.git.rev_parse(rev.hexsha, short=True)
+
+
 def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
     r"""
     Iterate over the ancestors of the commit `rev` in topological order, with

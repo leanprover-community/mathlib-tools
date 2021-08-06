@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 from mathlibtools.delayed_interrupt import DelayedInterrupt
 from mathlibtools.auth_github import auth_github, Github
-from mathlibtools.git_helpers import visit_ancestors
+from mathlibtools.git_helpers import visit_ancestors, short_sha
 
 log = logging.getLogger("Mathlib tools")
 log.setLevel(logging.INFO)
@@ -398,7 +398,7 @@ class LeanProject:
                 archive = get_mathlib_archive(parent_commit.hexsha,
                                               self.cache_url, self.force_download)
             except LeanDownloadError:
-                log.info(f"No cache available for revision {parent_commit.hexsha}")
+                log.info(f"No cache available for revision {short_sha(parent_commit)}")
                 pass
             else:
                 archives.append((parent_commit, archive))
@@ -411,20 +411,20 @@ class LeanProject:
         found_commit, archive = archives[0]
 
         if len(archives) > 1:
-            archive_items = ''.join([f'\n * {r.hexsha}' for r, ar in archives])
-            commit_args = ''.join([f' {r.hexsha}^!' for r, ar in archives])
+            archive_items = ''.join([f'\n * {short_sha(r)}' for r, ar in archives])
+            commit_args = ''.join([f' {short_sha(r)}^!' for r, ar in archives])
             log.warn(
-                f"No cache was available for {commit.hexsha}.\n"
+                f"No cache was available for {short_sha(commit)}.\n"
                 f"There are multiple viable caches from parent commits, using the first:{archive_items}\n"
                 f"All caches have been downloaded; use `get-cache --rev` to select a different one.\n"
                 f"To see the commits in question, run:\n"
-                f"  git log --graph {commit.hexsha}{commit_args}")
+                f"  git log --graph {short_sha(commit)}{commit_args}")
         elif found_commit != commit:
             log.warn(
-                f"No cache was available for {commit.hexsha}. "
-                f"Using the cache for the ancestor {found_commit.hexsha}.\n"
+                f"No cache was available for {short_sha(commit)}. "
+                f"Using the cache for the ancestor {short_sha(found_commit)}.\n"
                 f"To see the intermediate commits, run:\n"
-                f"  git log --graph {commit.hexsha} {found_commit.hexsha}^!")
+                f"  git log --graph {short_sha(commit)} {short_sha(found_commit)}^!")
 
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
