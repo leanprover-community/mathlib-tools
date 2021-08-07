@@ -9,10 +9,21 @@ def short_sha(rev: git.Commit) -> str:
 
 def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
     r"""
-    Iterate over the ancestors of the commit `rev` in topological order, with
-    the option to prune parents of visited commits.
+    Iterate over history, optionally pruning all ancestors of a given commit.
 
-    Consider the commit graph::
+    This iterates backwards over history starting at `rev` and traversing the
+    commit graph in topological (as opposed to date) order, ensuring that child
+    commits are always visited before any of their parent commits. In this
+    sense, this function is like ``repo.iter_commits(rev, topo_order=True)``.
+
+    The key difference from ``iter_commits`` is that this version yields
+    ``commit, prune`` pairs, where ``prune`` is a function accepting no
+    arguments. If ``prune()`` is called, then the iterator will not visit any
+    of the commits which are ancestors of ``commit``; that is, the history
+    "tree" from that point backwards is pruned.
+
+    As an example, consider a repository with the commit graph below, where
+    ``A`` is the root commit and ``K`` and ``L`` are tips of branches::
 
         A -- B -- E -- I -- J -- L
               \       /    /
@@ -20,26 +31,28 @@ def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
                 \        /
                  D ---- G --- K
 
-    where ``A`` is the root commit and ``K`` and ``L`` are tips of branches.
-    The following code runs against this commit graph
+    The following code runs against this commit graph, and calls ``prune``
+    if it finds commits ``B``, ``F``, or ``G``::
 
-    >>> for c, prune in visit_ancestors(L):
-    ...     if c in {B, F, G}:
-    ...         prune()
-    ...         print('found  ', c)
-    ...     else:
-    ...         print('visited', c)
-    visited L
-    visited J
-    visited H
-    visited I
-    found   F
-    found   G
-    visited E
+        >>> for c, prune in visit_ancestors(L):
+        ...     if c in {B, F, G}:
+        ...         prune()
+        ...         print('found  ', c)
+        ...     else:
+        ...         print('visited', c)
+        visited L
+        visited J
+        visited H
+        visited I
+        found   G
+        found   F
+        visited E
 
-    The exact order these commits appear in depends on the order of parents in
-    merge commits, but independent of this ``B`` will never be visited as it is
-    a parent of ``F`` and ``G``, and the sort order is topological.
+    As a result of calling ``prune()`` on commit ``G``, the ancestors of ``G``
+    (``D``, ``C``, ``B``, and ``A``) are pruned from the graph and never
+    visited. The exact order that these commits appear in depends on the order
+    of parents in merge commits, but since ``B`` is an ancestor of both ``F``
+    and ``G``, it will always be pruned before it is visited.
     """
     repo = rev.repo
     pruned_commits : List[git.Commit] = []  # the commits to ignore along with their ancestors
