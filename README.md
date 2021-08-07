@@ -16,38 +16,45 @@ you anything if Lean itself is not available).
 
 ### Released version
 
-The tools in this repository use python3, at least python 3.6, which is the oldest
-version of python supported by the python foundation. They can be
-installed using [pip](https://pypi.org/project/mathlibtools/). The basic
-install command for the latest released version is thus:
-```
-pip install mathlibtools
+#### `pipx`
+
+The tools in this repository use python3, at least python
+3.6, which is the oldest version of python supported
+by the python foundation. They can be installed using
+[pip](https://pypi.org/project/mathlibtools/). The basic install command
+for the latest released version is thus:
+```bash
+python3 -m pip install mathlibtools
 ```
 
-Depending on your setup `pip` may be called `pip3` to distinguish it from its
-deprecated python2 version. The above command may complain about
-permissions. This can be solved by running it as root, but this is not
-recommended in general. You can run `pip install --user mathlibtools`
-to install it in your home directory, and then make sure that
-`$HOME/.local/bin/` is in your shell path. 
+The above command may complain about permissions. This can be solved
+by running it as root, but this is not recommended in general. You can
+run `python3 -m pip install --user mathlibtools` to install it in your
+home directory (make sure that `$HOME/.local/bin/` is on your shell path
+afterwards), but an even better way is to use
+[pipx](https://pipxproject.github.io/pipx/):
 
-Alternatively, a convenient way to hide those issues is to use
-[pipx](https://pipxproject.github.io/pipx/). On Linux, you can do:
 ```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 source ~/.profile
 pipx install mathlibtools
 ```
-and on MacOS
+
+#### `macOS`
+
+If you are on macOS, the recommended way to install is via homebrew,
+which will handle the above Python installation for you:
+
 ```bash
-brew install gmp coreutils python3 pipx
-pipx ensurepath
-source ~/.bash_profile
-pipx install mathlibtools
+brew install mathlibtools
 ```
 
-If you are using NixOS, you can also install mathlib tools using the bundled `default.nix` file:
+#### `NixOS`
+
+If you are using NixOS, you can also install mathlib tools using the
+bundled `default.nix` file:
+
 ```
 nix-env -if https://github.com/leanprover-community/mathlib-tools/archive/master.tar.gz
 ```
