@@ -217,6 +217,9 @@ class CacheLocator:
                     prune()  # do not visit the ancestors of this commit
             return stack.pop_all(), caches
 
+        # https://github.com/python/mypy/issues/7726
+        assert False
+
     def find_local_with_fallback(self, rev: Commit, fallback: CacheFallback) -> LocalOleanCache:
         """
         Find (or download) a local cache for `rev` using the provided fallback strategy.
@@ -274,6 +277,8 @@ class CacheLocator:
             else:
                 raise RuntimeError('Invalid fallback argument')
 
+        # https://github.com/python/mypy/issues/7726
+        assert False
 
 def parse_version(version: str) -> VersionTuple:
     """Turn a lean version string into a tuple of integers or raise
