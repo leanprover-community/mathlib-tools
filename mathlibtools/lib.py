@@ -10,15 +10,19 @@ import stat
 import platform
 import subprocess
 import pickle
+import contextlib
+import enum
 from datetime import datetime
+import concurrent.futures
 from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
+import shutil
 
 import requests
 from tqdm import tqdm # type: ignore
 import toml
 import yaml
-from git import Repo, InvalidGitRepositoryError, GitCommandError # type: ignore
+from git import Repo, Commit, InvalidGitRepositoryError, GitCommandError # type: ignore
 from atomicwrites import atomic_write
 
 if TYPE_CHECKING:
@@ -105,51 +109,109 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
     """Unpack archive. This is needed for python < 3.7."""
     shutil.unpack_archive(str(fname), str(tgt_dir))
 
-def download_to_file(url: str, tgt: IO) -> None:
-    """Download from url into the file object tgt.
 
-    :param tgt: a file object that has been opened in mode `wb`."""
-    try:
-        req = requests.get(url, stream=True)
-        req.raise_for_status()
-    except ConnectionError:
-        raise LeanDownloadError("Can't connect to " + url)
-    except requests.HTTPError:
-        raise LeanDownloadError('Failed to download ' + url)
-    total_size = int(req.headers.get('content-length', 0))
-    BLOCK_SIZE = 1024
-    progress = tqdm(total=total_size, unit='iB', unit_scale=True)
-    for data in req.iter_content(BLOCK_SIZE):
-        progress.update(len(data))
-        tgt.write(data)
-    progress.close()
-    if total_size != 0 and progress.n != total_size:
-        raise LeanDownloadError('Failed to download ' + url)
 
-def download(url: str, target: Path) -> None:
-    """Download from url into the target path"""
-    with atomic_write(target, mode='wb', overwrite=True) as tgt:
-        log.info('Trying to download {} to {}'.format(url, target))
-        download_to_file(url, tgt)
+class OleanCache:
+    def __init__(self, locator: 'CacheLocator', rev: Commit):
+        self.locator = locator
+        self.rev = rev
+        self.path = self.locator.cache_dir / self.fname
 
-def get_mathlib_archive(rev: str, url:str = '', force: bool = False) -> Path:
-    """Download a mathlib archive for revision rev into .mathlib
+    @property
+    def fname(self) -> str:
+        return self.rev.hexsha + '.tar.xz'
 
-    Return the archive Path. Will raise LeanDownloadError if nothing works.
-    """
+    def download(self) -> 'LocalOleanCache':
+        return self
 
-    fname = rev + '.tar.xz'
-    path = DOT_MATHLIB/fname
-    if not force:
-        log.info('Looking for local mathlib oleans')
-        if path.exists():
-            log.info('Found local mathlib oleans')
-            return path
-    log.info('Looking for remote mathlib oleans')
-    base_url = url or get_download_url()
-    download(base_url + fname, path)
-    log.info('Found mathlib oleans at ' + base_url)
-    return path
+    def close(self) -> None:
+        pass
+
+    def __enter__(self) -> 'OleanCache':
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.close()
+
+
+class LocalOleanCache(OleanCache):
+    def __init__(self, locator: 'CacheLocator', rev):
+        super().__init__(locator, rev)
+        if not self.path.exists():
+            raise LookupError("Local cache not found")
+
+class RemoteOleanCache(OleanCache):
+    def __init__(self, locator: 'CacheLocator', rev):
+        super().__init__(locator, rev)
+        self.req = requests.get(self.locator.cache_url + self.fname, stream=True)
+        self.req.raise_for_status()
+
+    def close(self):
+        self.req.close()
+
+    def download(self):
+        with atomic_write(self.path, mode='wb', overwrite=True) as tgt:
+            total_size = int(self.req.headers.get('content-length', 0))
+            with tqdm.wrapattr(self.req.raw, "read", total=total_size,
+                               desc='  ' + short_sha(self.rev)) as src:
+                shutil.copyfileobj(src, tgt)
+        self.req.close()
+        return LocalOleanCache(self.locator, self.rev)
+
+
+class CacheLocator:
+    def __init__(self, repo: Repo, cache_url: str, cache_dir: Path, *, force_download=False):
+        self.repo = repo
+        self.cache_url = cache_url
+        self.cache_dir = cache_dir
+        self.force_download = force_download
+
+    def find_exact(self, rev: Commit) -> Optional[OleanCache]:
+        """ Find a cache that is for `rev` exactly """
+        log.info(f"Looking for mathlib oleans for {short_sha(rev)}")
+        if not self.force_download:
+            log.info(f'  locally...')
+            try:
+                c = LocalOleanCache(self, rev)
+            except LookupError:
+                pass
+            else:
+                log.info('  Found local mathlib oleans')
+                return c
+
+        log.info('  remotely...')
+        try:
+            c = RemoteOleanCache(self, rev)
+        except requests.HTTPError:
+            pass
+        else:
+            log.info('  Found remote mathlib oleans')
+            return c
+
+    def find_all(self, rev: Commit) -> Tuple[contextlib.ExitStack, List[OleanCache]]:
+        """
+        Find all closest ancestors that have a cache. Returns a tuple where the
+        first result is a contextmanager that will close any unused http requests
+        """
+        caches = []
+        with contextlib.ExitStack() as stack:
+            for parent_commit, prune in visit_ancestors(rev):
+                cache = self.find_exact(parent_commit)
+                if cache is None:
+                    log.info(f"No cache available for revision {short_sha(parent_commit)}")
+                else:
+                    stack.enter_context(cache)  # ensure we do not leak requests
+                    caches.append(cache)
+                    prune()  # do not visit the ancestors of this commit
+            return stack.pop_all(), caches
+
+
+class CacheFallback(enum.Enum):
+    NONE = 'none'
+    DOWNLOAD_FIRST = 'download-first'
+    DOWNLOAD_ALL = 'download-all'
+    SHOW = 'show'
+
 
 def parse_version(version: str) -> VersionTuple:
     """Turn a lean version string into a tuple of integers or raise
@@ -376,7 +438,8 @@ class LeanProject:
                         "'rev':", 'rev =').replace("'", '"')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
-    def get_mathlib_olean(self, rev: Optional[str] = None) -> None:
+    def get_mathlib_olean(self, rev: Optional[str] = None,
+                          fallback: CacheFallback = CacheFallback.SHOW) -> None:
         """Get precompiled mathlib oleans for this project, at a specific
         commit if rev is provided."""
         # Just in case the user broke the workflow (for instance git clone
@@ -392,44 +455,54 @@ class LeanProject:
             self.run(['leanpkg', 'configure'])
 
         # find all closest ancestors that have a cache
-        archives = []
-        for parent_commit, prune in visit_ancestors(commit):
-            try:
-                archive = get_mathlib_archive(parent_commit.hexsha,
-                                              self.cache_url, self.force_download)
-            except LeanDownloadError:
-                log.info(f"No cache available for revision {short_sha(parent_commit)}")
-                pass
-            else:
-                archives.append((parent_commit, archive))
-                prune()  # do not visit the ancestors of this commit
+        cache_locator = CacheLocator(repo, self.cache_url, DOT_MATHLIB,
+                                     force_download=self.force_download)
+        if fallback == CacheFallback.NONE:
+            cache = cache_locator.find_exact(commit)
+            if not cache:
+                raise LeanDownloadError(f"No cache was available for {short_sha(commit)}.\n")
+        else:
+            ctx, caches = cache_locator.find_all(commit)
+            with ctx:
+                if not caches:
+                    # this should never happen unless azure goes down
+                    raise LeanProjectError('No archives available for any commits!')
 
-        if not archives:
-            # this should never happen unless azure goes down
-            raise LeanProjectError('No archives available for any commits!')
+                cache = caches[0]
 
-        found_commit, archive = archives[0]
+                if len(caches) > 1:
+                    archive_items = ''.join([f'\n * {short_sha(c.rev)}' for c in caches])
+                    commit_args = ''.join([f' {short_sha(c.rev)}^!' for c in caches])
+                    log.warn(
+                        f"No cache was available for {short_sha(commit)}.\n"
+                        f"There are multiple viable caches from parent commits:{archive_items}\n"
+                        f"To see the commits in question, run:\n"
+                        f"  git log --graph {short_sha(commit)}{commit_args}")
+                elif cache.rev != commit:
+                    log.warn(
+                        f"No cache was available for {short_sha(commit)}. "
+                        f"A cache was found for the ancestor {short_sha(cache.rev)}.\n"
+                        f"To see the intermediate commits, run:\n"
+                        f"  git log --graph {short_sha(commit)} {short_sha(cache.rev)}^!")
 
-        if len(archives) > 1:
-            archive_items = ''.join([f'\n * {short_sha(r)}' for r, ar in archives])
-            commit_args = ''.join([f' {short_sha(r)}^!' for r, ar in archives])
-            log.warn(
-                f"No cache was available for {short_sha(commit)}.\n"
-                f"There are multiple viable caches from parent commits, using the first:{archive_items}\n"
-                f"All caches have been downloaded; use `get-cache --rev` to select a different one.\n"
-                f"To see the commits in question, run:\n"
-                f"  git log --graph {short_sha(commit)}{commit_args}")
-        elif found_commit != commit:
-            log.warn(
-                f"No cache was available for {short_sha(commit)}. "
-                f"Using the cache for the ancestor {short_sha(found_commit)}.\n"
-                f"To see the intermediate commits, run:\n"
-                f"  git log --graph {short_sha(commit)} {short_sha(found_commit)}^!")
+                if fallback == CacheFallback.DOWNLOAD_ALL:
+                    log.info("Downloading all caches")
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        caches = list(executor.map(lambda c: c.download(), caches))
+                elif fallback == CacheFallback.DOWNLOAD_FIRST:
+                    log.info("Downloading first cache")
+                    cache = caches[0] = caches[0].download()
+                elif fallback == CacheFallback.SHOW:
+                    log.info(f"Run `leanproject get-cache --rev` on one of the available commits above.")
+                    raise LeanDownloadError
+                else:
+                    raise RuntimeError('Invalid fallback argument')
 
+        log.info("Applying cache")
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(archive, self.mathlib_folder)
-        if found_commit != repo.head.commit:
+        unpack_archive(cache.path, self.mathlib_folder)
+        if cache.rev != repo.head.commit:
             # If the commit we unpacked isn't HEAD, then there might be some
             # zombie lean files around. It is probably safe, but slower, to do
             # this unconditionally.
@@ -452,7 +525,8 @@ class LeanProject:
         pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']),
              archive)
 
-    def get_cache(self, rev: Optional[str] = None, force: bool = False) -> None:
+    def get_cache(self, rev: Optional[str] = None, force: bool = False,
+                  fallback: CacheFallback = CacheFallback.SHOW) -> None:
         """Tries to get olean cache.
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
@@ -462,7 +536,7 @@ class LeanProject:
         if self.is_dirty and not force:
             raise LeanDirtyRepo('Cannot get cache for a dirty repository.')
         if self.is_mathlib:
-            self.get_mathlib_olean(rev)
+            self.get_mathlib_olean(rev, fallback)
         else:
             if rev:
                 rev = self.repo.rev_parse(rev).hexsha
