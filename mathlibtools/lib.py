@@ -122,7 +122,7 @@ class OleanCache:
         return self.rev.hexsha + '.tar.xz'
 
     def download(self) -> 'LocalOleanCache':
-        return self
+        raise NotImplementedError
 
     def close(self) -> None:
         pass
@@ -139,6 +139,9 @@ class LocalOleanCache(OleanCache):
         super().__init__(locator, rev)
         if not self.path.exists():
             raise LookupError("Local cache not found")
+
+    def download(self) -> 'LocalOleanCache':
+        return self
 
 class RemoteOleanCache(OleanCache):
     def __init__(self, locator: 'CacheLocator', rev):
@@ -179,21 +182,23 @@ class CacheLocator:
         if not self.force_download:
             log.info(f'  locally...')
             try:
-                c = LocalOleanCache(self, rev)
+                local_c = LocalOleanCache(self, rev)
             except LookupError:
                 pass
             else:
                 log.info('  Found local mathlib oleans')
-                return c
+                return local_c
 
         log.info('  remotely...')
         try:
-            c = RemoteOleanCache(self, rev)
+            remote_c = RemoteOleanCache(self, rev)
         except requests.HTTPError:
             pass
         else:
             log.info('  Found remote mathlib oleans')
-            return c
+            return remote_c
+
+        return None
 
     def find_all(self, rev: Commit) -> Tuple[contextlib.ExitStack, List[OleanCache]]:
         """
