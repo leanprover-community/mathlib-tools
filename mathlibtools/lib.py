@@ -216,12 +216,16 @@ class CacheLocator:
         """
         Find (or download) a local cache for `rev` using the provided fallback strategy.
         """
+        # if fallback is `NONE`, do not even attempt a search (to conserve network access)
         if fallback == CacheFallback.NONE:
             cache = self.find_exact(rev)
             if not cache:
                 raise LeanDownloadError(f"No cache was available for {short_sha(rev)}.\n")
-            return cache
+            log.info("Downloading matching cache")
+            return cache.download()
 
+        # Otherwise, do a search. This will open as many HTTP connections as
+        # necessary, which the `with` statement cleans up.
         ctx, caches = self.find_all(rev)
         with ctx:
             if not caches:
@@ -264,6 +268,7 @@ class CacheLocator:
                 raise LeanDownloadError
             else:
                 raise RuntimeError('Invalid fallback argument')
+
 
 def parse_version(version: str) -> VersionTuple:
     """Turn a lean version string into a tuple of integers or raise
