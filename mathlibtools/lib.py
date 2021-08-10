@@ -159,6 +159,13 @@ class RemoteOleanCache(OleanCache):
         return LocalOleanCache(self.locator, self.rev)
 
 
+class CacheFallback(enum.Enum):
+    NONE = 'none'
+    DOWNLOAD_FIRST = 'download-first'
+    DOWNLOAD_ALL = 'download-all'
+    SHOW = 'show'
+
+
 class CacheLocator:
     def __init__(self, repo: Repo, cache_url: str, cache_dir: Path, *, force_download=False):
         self.repo = repo
@@ -205,13 +212,58 @@ class CacheLocator:
                     prune()  # do not visit the ancestors of this commit
             return stack.pop_all(), caches
 
+    def find_local_with_fallback(self, rev: Commit, fallback: CacheFallback) -> LocalOleanCache:
+        """
+        Find (or download) a local cache for `rev` using the provided fallback strategy.
+        """
+        if fallback == CacheFallback.NONE:
+            cache = self.find_exact(rev)
+            if not cache:
+                raise LeanDownloadError(f"No cache was available for {short_sha(rev)}.\n")
+            return cache
 
-class CacheFallback(enum.Enum):
-    NONE = 'none'
-    DOWNLOAD_FIRST = 'download-first'
-    DOWNLOAD_ALL = 'download-all'
-    SHOW = 'show'
+        ctx, caches = self.find_all(rev)
+        with ctx:
+            if not caches:
+                # this should never happen unless azure goes down
+                raise LeanProjectError('No archives available for any commits!')
 
+            cache = caches[0]
+
+            if cache.rev == rev:
+                assert len(caches) == 1
+                log.info("Downloading matching cache")
+                return caches[0].download()
+
+            if len(caches) > 1:
+                archive_items = ''.join([f'\n * {short_sha(c.rev)}' for c in caches])
+                commit_args = ''.join([f' {short_sha(c.rev)}^!' for c in caches])
+                log.warn(
+                    f"No cache was available for {short_sha(rev)}.\n"
+                    f"There are multiple viable caches from parent commits:{archive_items}\n"
+                    f"To see the commits in question, run:\n"
+                    f"  git log --graph {short_sha(rev)}{commit_args}")
+            else:
+                log.warn(
+                    f"No cache was available for {short_sha(rev)}. "
+                    f"A cache was found for the ancestor {short_sha(cache.rev)}.\n"
+                    f"To see the intermediate commits, run:\n"
+                    f"  git log --graph {short_sha(rev)} {short_sha(cache.rev)}^!")
+
+
+            if fallback == CacheFallback.DOWNLOAD_ALL:
+                log.info("Downloading all caches")
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    caches = list(executor.map(lambda c: c.download(), caches))
+                return caches[0]
+            elif fallback == CacheFallback.DOWNLOAD_FIRST:
+                log.info("Downloading first cache")
+                return caches[0].download()
+            elif fallback == CacheFallback.SHOW:
+                log.info(f"Run `leanproject get-cache --rev` on one of the available commits above.")
+                raise LeanDownloadError
+            else:
+                raise RuntimeError('Invalid fallback argument')
 
 def parse_version(version: str) -> VersionTuple:
     """Turn a lean version string into a tuple of integers or raise
@@ -454,50 +506,9 @@ class LeanProject:
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
 
-        # find all closest ancestors that have a cache
         cache_locator = CacheLocator(repo, self.cache_url, DOT_MATHLIB,
                                      force_download=self.force_download)
-        if fallback == CacheFallback.NONE:
-            cache = cache_locator.find_exact(commit)
-            if not cache:
-                raise LeanDownloadError(f"No cache was available for {short_sha(commit)}.\n")
-        else:
-            ctx, caches = cache_locator.find_all(commit)
-            with ctx:
-                if not caches:
-                    # this should never happen unless azure goes down
-                    raise LeanProjectError('No archives available for any commits!')
-
-                cache = caches[0]
-
-                if len(caches) > 1:
-                    archive_items = ''.join([f'\n * {short_sha(c.rev)}' for c in caches])
-                    commit_args = ''.join([f' {short_sha(c.rev)}^!' for c in caches])
-                    log.warn(
-                        f"No cache was available for {short_sha(commit)}.\n"
-                        f"There are multiple viable caches from parent commits:{archive_items}\n"
-                        f"To see the commits in question, run:\n"
-                        f"  git log --graph {short_sha(commit)}{commit_args}")
-                elif cache.rev != commit:
-                    log.warn(
-                        f"No cache was available for {short_sha(commit)}. "
-                        f"A cache was found for the ancestor {short_sha(cache.rev)}.\n"
-                        f"To see the intermediate commits, run:\n"
-                        f"  git log --graph {short_sha(commit)} {short_sha(cache.rev)}^!")
-
-                if fallback == CacheFallback.DOWNLOAD_ALL:
-                    log.info("Downloading all caches")
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        caches = list(executor.map(lambda c: c.download(), caches))
-                elif fallback == CacheFallback.DOWNLOAD_FIRST:
-                    log.info("Downloading first cache")
-                    cache = caches[0] = caches[0].download()
-                elif fallback == CacheFallback.SHOW:
-                    log.info(f"Run `leanproject get-cache --rev` on one of the available commits above.")
-                    raise LeanDownloadError
-                else:
-                    raise RuntimeError('Invalid fallback argument')
-
+        cache = cache_locator.find_local_with_fallback(commit, fallback)
         log.info("Applying cache")
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
