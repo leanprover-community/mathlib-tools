@@ -229,8 +229,9 @@ class CacheLocator:
             cache = self.find_exact(rev)
             if not cache:
                 raise LeanDownloadError(f"No cache was available for {short_sha(rev)}.\n")
-            log.info("Downloading matching cache")
-            return cache.download()
+            with cache:
+                log.info("Downloading matching cache")
+                return cache.download()
 
         # Otherwise, do a search. This will open as many HTTP connections as
         # necessary, which the `with` statement cleans up.
