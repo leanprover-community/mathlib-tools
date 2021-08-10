@@ -263,8 +263,8 @@ class CacheLocator:
             if fallback == CacheFallback.DOWNLOAD_ALL:
                 log.info("Downloading all caches")
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    caches = list(executor.map(lambda c: c.download(), caches))
-                return caches[0]
+                    local_caches = list(executor.map(lambda c: c.download(), caches))
+                return local_caches[0]
             elif fallback == CacheFallback.DOWNLOAD_FIRST:
                 log.info("Downloading first cache")
                 return caches[0].download()

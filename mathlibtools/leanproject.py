@@ -220,9 +220,9 @@ def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
       download-first: show all fallback caches, download and apply the first
       download-all: show and download all fallback caches, apply the first.
     """
-    fallback = CacheFallback(fallback)
+    fallback_enum = CacheFallback(fallback)
     try:
-        proj().get_cache(rev, force, fallback)
+        proj().get_cache(rev, force, fallback_enum)
     except LeanDirtyRepo as err:
         handle_exception(err,
                 'The repository is dirty, please commit changes before '
@@ -243,10 +243,10 @@ def get_mathlib_cache(rev: Optional[str], fallback: str) -> None:
       show: show but do not download possible fallback caches
       download-first: show all fallback caches, download and apply the first
       download-all: show and download all fallback caches, apply the first."""
-    fallback = CacheFallback(fallback)
+    fallback_enum = CacheFallback(fallback)
     project = proj()
     try:
-        project.get_mathlib_olean(rev, fallback)
+        project.get_mathlib_olean(rev, fallback_enum)
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch mathlib oleans')
 
