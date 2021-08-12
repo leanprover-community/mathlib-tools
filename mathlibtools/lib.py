@@ -112,6 +112,11 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
 
 
 class OleanCache:
+    """ A reference to a cache of oleans for a single commit.
+
+    This is a context manager so that references to caches which hold onto resources
+    can clean up when those resources are no longer needed.
+    """
     def __init__(self, locator: 'CacheLocator', rev: Commit):
         self.locator = locator
         self.rev = rev
@@ -135,16 +140,23 @@ class OleanCache:
 
 
 class LocalOleanCache(OleanCache):
+    """ A cache of oleans that lives on the local filesystem.
+
+    Any cache can be converted into a local cache via `OleanCache.download`."""
     def __init__(self, locator: 'CacheLocator', rev):
         super().__init__(locator, rev)
         if not self.path.exists():
             raise LookupError("Local cache not found")
 
     def make_local(self) -> 'LocalOleanCache':
-        return self
+        return self  # already downloaded
+
 
 
 class RemoteOleanCache(OleanCache):
+    """ A cache of oleans that lives on a remove server.
+
+    This holds an open HTTP connection to the server from which the cache can be downloaded."""
     def __init__(self, locator: 'CacheLocator', rev):
         super().__init__(locator, rev)
         self.req = requests.get(self.locator.cache_url + self.fname, stream=True)
@@ -165,6 +177,7 @@ class RemoteOleanCache(OleanCache):
 
 
 class CacheFallback(enum.Enum):
+    """ Specifies the fallback to use when an exactly matching cache is not available """
     NONE = 'none'
     DOWNLOAD_FIRST = 'download-first'
     DOWNLOAD_ALL = 'download-all'
@@ -172,6 +185,7 @@ class CacheFallback(enum.Enum):
 
 
 class CacheLocator:
+    """ A helper class to locate and download caches for a given repo and remote URL """
     def __init__(self, repo: Repo, cache_url: str, cache_dir: Path, *, force_download=False):
         self.repo = repo
         self.cache_url = cache_url
