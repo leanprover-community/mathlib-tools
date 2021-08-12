@@ -121,7 +121,7 @@ class OleanCache:
     def fname(self) -> str:
         return self.rev.hexsha + '.tar.xz'
 
-    def download(self) -> 'LocalOleanCache':
+    def make_local(self) -> 'LocalOleanCache':
         raise NotImplementedError
 
     def close(self) -> None:
@@ -140,8 +140,9 @@ class LocalOleanCache(OleanCache):
         if not self.path.exists():
             raise LookupError("Local cache not found")
 
-    def download(self) -> 'LocalOleanCache':
+    def make_local(self) -> 'LocalOleanCache':
         return self
+
 
 class RemoteOleanCache(OleanCache):
     def __init__(self, locator: 'CacheLocator', rev):
@@ -152,7 +153,8 @@ class RemoteOleanCache(OleanCache):
     def close(self):
         self.req.close()
 
-    def download(self):
+    def make_local(self):
+        # download the cache atomically from the already-open connection
         with atomic_write(self.path, mode='wb', overwrite=True) as tgt:
             total_size = int(self.req.headers.get('content-length', 0))
             with tqdm.wrapattr(self.req.raw, "read", total=total_size,
@@ -230,8 +232,8 @@ class CacheLocator:
             if not cache:
                 raise LeanDownloadError(f"No cache was available for {short_sha(rev)}.\n")
             with cache:
-                log.info("Downloading matching cache")
-                return cache.download()
+                log.info("Located matching cache")
+                return cache.make_local()
 
         # Otherwise, do a search. This will open as many HTTP connections as
         # necessary, which the `with` statement cleans up.
@@ -245,8 +247,8 @@ class CacheLocator:
 
             if cache.rev == rev:
                 assert len(caches) == 1
-                log.info("Downloading matching cache")
-                return caches[0].download()
+                log.info("Using matching cache")
+                return caches[0].make_local()
 
             if len(caches) > 1:
                 archive_items = ''.join([f'\n * {short_sha(c.rev)}' for c in caches])
@@ -263,15 +265,14 @@ class CacheLocator:
                     f"To see the intermediate commits, run:\n"
                     f"  git log --graph {short_sha(rev)} {short_sha(cache.rev)}^!")
 
-
             if fallback == CacheFallback.DOWNLOAD_ALL:
-                log.info("Downloading all caches")
+                log.info("Preparing all caches, using the first")
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    local_caches = list(executor.map(lambda c: c.download(), caches))
+                    local_caches = list(executor.map(lambda c: c.make_local(), caches))
                 return local_caches[0]
             elif fallback == CacheFallback.DOWNLOAD_FIRST:
-                log.info("Downloading first cache")
-                return caches[0].download()
+                log.info("Using first cache")
+                return caches[0].make_local()
             elif fallback == CacheFallback.SHOW:
                 log.info(f"Run `leanproject get-cache --rev` on one of the available commits above.")
                 raise LeanDownloadError
