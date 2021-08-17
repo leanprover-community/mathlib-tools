@@ -20,7 +20,7 @@ jobs:
         python-version: 3.9
 
     - name: Install pyinstaller
-      run: python -m pip install pyinstaller -r mathlibtools/pyinstaller-requirements.txt
+      run: python -m pip install pyinstaller -r pyinstaller-requirements.txt
 
     - name: Run pyinstaller
       run: python -m PyInstaller mathlibtools/leanproject.spec
