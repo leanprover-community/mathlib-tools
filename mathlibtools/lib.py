@@ -22,7 +22,8 @@ import requests
 from tqdm import tqdm # type: ignore
 import toml
 import yaml
-from git import Repo, Commit, InvalidGitRepositoryError, GitCommandError # type: ignore
+from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
+                 GitCommandError, BadName) # type: ignore
 from atomicwrites import atomic_write
 
 if TYPE_CHECKING:
@@ -150,7 +151,6 @@ class LocalOleanCache(OleanCache):
 
     def make_local(self) -> 'LocalOleanCache':
         return self  # already downloaded
-
 
 
 class RemoteOleanCache(OleanCache):
@@ -495,6 +495,15 @@ class LeanProject:
         else:
             return self.directory/'_target'/'deps'/'mathlib'
 
+    @property
+    def mathlib_repo(self) -> Repo:
+        if self.is_mathlib:
+            assert self.repo
+            return self.repo
+        else:
+            return Repo(self.mathlib_folder)
+
+
     def read_config(self) -> None:
         try:
             config = toml.load(self.directory/'leanpkg.toml')
@@ -531,8 +540,15 @@ class LeanProject:
             assert self.repo
             repo = self.repo
         else:
-            repo = Repo(self.mathlib_folder)
-        commit = repo.rev_parse(rev or self.mathlib_rev)
+            repo = self.mathlib_repo
+        try:
+            commit = repo.rev_parse(rev or self.mathlib_rev)
+        except BadName:
+            # presumably the mathlib folder is outdated
+            log.info("Can't find the required mathlib revision, will try to update"
+                     "mathlib git repository")
+            self.run_echo(['leanpkg', 'configure'])
+            commit = repo.rev_parse(rev or self.mathlib_rev)
 
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
@@ -596,7 +612,7 @@ class LeanProject:
         repo = Repo.clone_from(url, target)
         if create_branch and branch:
             try:
-                repo.git.checkout('HEAD', b=branch)
+                repo.git.checkout('HEAD', '-b', branch)
             except (IndexError, GitCommandError):
                 log.error('Cannot create new git branch')
                 shutil.rmtree(target)
@@ -684,7 +700,7 @@ class LeanProject:
                 assert self.repo
                 self.repo.head.reset(working_tree=True)
         elif self.mathlib_folder.exists():
-            mathlib = Repo(self.mathlib_folder)
+            mathlib = self.mathlib_repo
             mathlib.head.reset(working_tree=True)
             mathlib.git.clean('-fd')
         else:
