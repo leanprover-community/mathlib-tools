@@ -1,3 +1,4 @@
+import os
 import pytest
 from types import SimpleNamespace
 import git
@@ -21,7 +22,6 @@ def dummy_repo(tmp_path):
         cw.set_value("user", "email", "<>")
 
     # workaround for https://github.com/gitpython-developers/GitPython/pull/1314
-    import os
     os.environ['USER'] = 'gitpython needs this to be here so it can ignore it'
 
     A = repo.index.commit("A")
