@@ -22,5 +22,5 @@ requests==2.25.1
 smmap==3.0.5
 toml==0.10.2
 tqdm==4.59.0
-urllib3==1.26.3
+urllib3==1.26.5
 wrapt==1.12.1
