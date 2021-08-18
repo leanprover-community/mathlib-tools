@@ -14,6 +14,7 @@ import contextlib
 import enum
 from datetime import datetime
 import concurrent.futures
+import tarfile
 from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
 import shutil
@@ -107,10 +108,10 @@ def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
     os.chdir(str(cur_dir))
 
 def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
-    """Unpack archive. This is needed for python < 3.7."""
-    shutil.unpack_archive(str(fname), str(tgt_dir))
-
-
+    """ Alternative to `shutil.unpack_archive` that shows progress"""
+    with tarfile.open(fname) as tarobj:
+        tarobj.extractall(
+            str(tgt_dir), members=tqdm(tarobj, desc='  files extracted', unit=''))
 
 class OleanCache:
     """ A reference to a cache of oleans for a single commit.
