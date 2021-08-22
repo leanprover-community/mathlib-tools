@@ -214,7 +214,7 @@ def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
     """Restore cached olean files.
 
     \b
-    The fallback parameter is intepreted as follows:
+    The fallback parameter is interpreted as follows:
       none: fail without trying anything else
       show: show but do not download possible fallback caches
       download-first: show all fallback caches, download and apply the first
@@ -238,7 +238,7 @@ def get_mathlib_cache(rev: Optional[str], fallback: str) -> None:
     """Get mathlib .lean and .olean files, without upgrading.
 
     \b
-    The fallback parameter is intepreted as follows:
+    The fallback parameter is interpreted as follows:
       none: fail without trying anything else
       show: show but do not download possible fallback caches
       download-first: show all fallback caches, download and apply the first
