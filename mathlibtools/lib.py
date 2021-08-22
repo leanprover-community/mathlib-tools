@@ -112,7 +112,7 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path],
     """ Alternative to `shutil.unpack_archive` that shows progress"""
     with tarfile.open(fname) as tarobj:
         if oleans_only:
-            members = (f for f in tarobj if Path(f.name).suffix == '.olean')
+            members : Iterable[tarfile.TarInfo] = (f for f in tarobj if Path(f.name).suffix == '.olean')
         else:
             members = tarobj
         tarobj.extractall(
