@@ -237,7 +237,7 @@ def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
         handle_exception(err, 'Failed to fetch cached oleans')
 
 @cli.command()
-def get_mathlib_cache(rev: Optional[str], fallback: str) -> None:
+def get_mathlib_cache() -> None:
     """Get mathlib .lean and .olean files in a project depending on mathlib,
     without upgrading."""
     project = proj()
