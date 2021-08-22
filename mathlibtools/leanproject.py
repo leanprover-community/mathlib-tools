@@ -196,7 +196,10 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
 @click.option('--force', default=False, is_flag=True,
               help='Make cache even if the repository is dirty or cache exists.')
 def mk_cache(force: bool = False) -> None:
-    """Cache olean files."""
+    """Cache olean files.
+
+    If run with `--force` on a dirty repository, this creates a temporary commit
+    to associate the dirty cache with."""
     try:
         proj().mk_cache(force)
     except LeanDirtyRepo as err:
@@ -212,6 +215,9 @@ def mk_cache(force: bool = False) -> None:
               default='show', help="Behavior if no matching cache is available.")
 def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
     """Restore cached olean files.
+
+    This will refuse to run on a dirty repo by default, as doing so could blow
+    away olean files which would be time-consuming to reconstruct.
 
     \b
     The fallback parameter is interpreted as follows:
@@ -231,22 +237,12 @@ def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
         handle_exception(err, 'Failed to fetch cached oleans')
 
 @cli.command()
-@click.option('--rev', default=None, help='A git sha.')
-@click.option('--fallback', type=click.Choice(['none', 'show', 'download-first', 'download-all']),
-              default='show', help="Behavior if no matching cache is available.")
 def get_mathlib_cache(rev: Optional[str], fallback: str) -> None:
-    """Get mathlib .lean and .olean files, without upgrading.
-
-    \b
-    The fallback parameter is interpreted as follows:
-      none: fail without trying anything else
-      show: show but do not download possible fallback caches
-      download-first: show all fallback caches, download and apply the first
-      download-all: show and download all fallback caches, apply the first."""
-    fallback_enum = CacheFallback(fallback)
+    """Get mathlib .lean and .olean files in a project depending on mathlib,
+    without upgrading."""
     project = proj()
     try:
-        project.get_mathlib_olean(rev, fallback_enum)
+        project.get_mathlib_olean()
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch mathlib oleans')
 

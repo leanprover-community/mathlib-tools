@@ -539,36 +539,41 @@ class LeanProject:
                         "'rev':", 'rev =').replace("'", '"')
                 cfg.write('{} = {}\n'.format(dep, nval))
 
-    def get_mathlib_olean(self, rev: Optional[str] = None,
-                          fallback: CacheFallback = CacheFallback.SHOW) -> None:
-        """Get precompiled mathlib oleans for this project, at a specific
-        commit if rev is provided."""
-        # Just in case the user broke the workflow (for instance git clone
-        # mathlib by hand and then run `leanproject get-cache`)
+    def get_mathlib_olean(self) -> None:
+        """Get precompiled mathlib oleans for this project (which depends on
+        mathlib)"""
         if self.is_mathlib:
-            assert self.repo
-            repo = self.repo
-        else:
-            repo = self.mathlib_repo
+            # user should have run `get-cache` not `get-mathlib-cache
+            log.warn("`get-mathlib-cache` is for projects which depend on "
+                     "mathlib, not for mathlib itself. "
+                     "Running `get-cache` instead.")
+            return self.get_cache()
+
+        repo = self.mathlib_repo
         try:
-            commit = repo.rev_parse(rev or self.mathlib_rev)
+            commit = repo.rev_parse(self.mathlib_rev)
         except BadName:
             # presumably the mathlib folder is outdated
             log.info("Can't find the required mathlib revision, will try to update"
                      "mathlib git repository")
             self.run_echo(['leanpkg', 'configure'])
-            commit = repo.rev_parse(rev or self.mathlib_rev)
+            commit = repo.rev_parse(self.mathlib_rev)
 
+        # Just in case the user broke the workflow (for instance git clone
+        # mathlib by hand and then run `leanproject get-cache`)
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
 
         cache_locator = CacheLocator(self.name, repo, self.cache_url, DOT_MATHLIB,
                                      force_download=self.force_download)
-        cache = cache_locator.find_local_with_fallback(commit, fallback)
+
+        # We want an exact match here; if we can't find one, then the user should
+        # just point their config file at a version of mathlib with a cache.
+        cache = cache_locator.find_local_with_fallback(commit, fallback=CacheFallback.NONE)
         log.info("Applying cache")
-        self.clean_mathlib()
+        self.clean_mathlib_dep()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(cache.path, self.mathlib_folder, oleans_only=self.is_mathlib)
+        unpack_archive(cache.path, self.mathlib_folder, oleans_only=False)
         if cache.rev != repo.head.commit:
             # If the commit we unpacked isn't HEAD, then there might be some
             # zombie olean files around. It is probably safe, but slower, to do
@@ -579,10 +584,18 @@ class LeanProject:
 
     def mk_cache(self, force: bool = False) -> None:
         """Cache oleans for this project."""
-        if self.is_dirty and not force:
-            raise LeanDirtyRepo
         if not self.rev:
             raise ValueError('This project has no git commit.')
+        rev = self.rev
+        if self.is_dirty:
+            if force:
+                # create a new sha associated with the local changes
+                rev = self.repo.git.stash('create', 'stash from `mk-cache --force`')
+                rev = self.repo.rev_parse(rev)
+                log.info(f'Saving a cache for the dirty working tree at {short_sha(rev)}.')
+                log.info(f'Use `leanproject --get-cache {short_sha(rev)}` to load this cache in future.')
+            else:
+                raise LeanDirtyRepo
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
         archive = tgt_folder/(str(self.rev) + '.tar.xz')
@@ -594,23 +607,37 @@ class LeanProject:
 
     def get_cache(self, rev: Optional[str] = None, force: bool = False,
                   fallback: CacheFallback = CacheFallback.SHOW) -> None:
-        """Tries to get olean cacfhe.
+        """Tries to get olean cache for the current project.
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
         """
         if not self.repo:
             raise LeanProjectError('This project has no git repository.')
-        if self.is_dirty and not force:
-            raise LeanDirtyRepo('Cannot get cache for a dirty repository.')
+        if self.is_dirty and rev is None and not force:
+            # if the user passed `rev`, they deliberately want a cache that does
+            # not match their local changes anyway.
+            raise LeanDirtyRepo('Getting a new cache may result in a '
+                                'time-consuming rebuild.')
+
         if self.is_mathlib:
-            self.get_mathlib_olean(rev, fallback)
+            cache_locator = CacheLocator(self.name, self.repo, self.cache_url, DOT_MATHLIB,
+                                         force_download=self.force_download)
         else:
-            commit = self.repo.rev_parse(rev) if rev is not None else self.repo.head.commit
+            # TODO: support remote caches for non-mathlib projects
             cache_locator = CacheLocator(self.name, self.repo, None, self.directory/'_cache',
                                          force_download=self.force_download)
-            cache = cache_locator.find_local_with_fallback(commit, fallback)
-            log.info("Applying cache")
-            unpack_archive(cache.path, self.directory, oleans_only=True)
+
+        commit = self.repo.rev_parse(rev) if rev is not None else self.repo.head.commit
+        cache = cache_locator.find_local_with_fallback(commit, fallback)
+        log.info("Applying cache")
+        unpack_archive(cache.path, self.directory, oleans_only=True)
+        if cache.rev != self.repo.head.commit:
+            # If the commit we unpacked isn't HEAD, then there might be some
+            # zombie olean files around. It is probably safe, but slower, to do
+            # this unconditionally.
+            self.delete_zombies()
+        # Let's now touch oleans, just in case
+        touch_oleans(self.directory)
 
     @classmethod
     def from_git_url(cls, url: str, target: str = '',
@@ -701,16 +728,14 @@ class LeanProject:
 
     def build(self) -> None:
         log.info('Building project ' + self.name)
-        self.clean_mathlib()
+        if not self.is_mathlib:
+            self.clean_mathlib_dep()
         self.run_echo(['leanpkg', 'build'])
 
-    def clean_mathlib(self, force: bool = False) -> None:
-        """Restore git sanity in mathlib"""
-        if self.is_mathlib:
-            if not self.is_dirty or force:
-                assert self.repo
-                self.repo.head.reset(working_tree=True)
-        elif self.mathlib_folder.exists():
+    def clean_mathlib_dep(self, force: bool = False) -> None:
+        """Restore git sanity in a mathlib dependency"""
+        assert not self.is_mathlib
+        if self.mathlib_folder.exists():
             mathlib = self.mathlib_repo
             mathlib.head.reset(working_tree=True)
             mathlib.git.clean('-fd')
@@ -738,7 +763,7 @@ class LeanProject:
                 return
             self.rev = self.repo.commit().hexsha
         else:
-            self.clean_mathlib()
+            self.clean_mathlib_dep()
             if self.upgrade_lean:
                 mathlib_lean = mathlib_lean_version()
 
