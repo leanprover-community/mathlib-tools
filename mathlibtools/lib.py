@@ -586,6 +586,8 @@ class LeanProject:
         """Cache oleans for this project."""
         if not self.rev:
             raise ValueError('This project has no git commit.')
+        if not self.repo:
+            raise LeanProjectError('This project has no git repository.')
         rev = self.rev
         if self.is_dirty:
             if force:
