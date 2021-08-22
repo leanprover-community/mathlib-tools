@@ -107,11 +107,16 @@ def pack(root: Path, srcs: Iterable[Path], target: Path) -> None:
         ar.close()
     os.chdir(str(cur_dir))
 
-def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
+def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path],
+                   oleans_only: bool) -> None:
     """ Alternative to `shutil.unpack_archive` that shows progress"""
     with tarfile.open(fname) as tarobj:
+        if oleans_only:
+            members = (f for f in tarobj if Path(f.name).suffix == '.olean')
+        else:
+            members = tarobj
         tarobj.extractall(
-            str(tgt_dir), members=tqdm(tarobj, desc='  files extracted', unit=''))
+            str(tgt_dir), members=tqdm(members, desc='  files extracted', unit=''))
 
 class OleanCache:
     """ A reference to a cache of oleans for a single commit.
@@ -187,7 +192,8 @@ class CacheFallback(enum.Enum):
 
 class CacheLocator:
     """ A helper class to locate and download caches for a given repo and remote URL """
-    def __init__(self, repo: Repo, cache_url: str, cache_dir: Path, *, force_download=False):
+    def __init__(self, name: str, repo: Repo, cache_url: Optional[str], cache_dir: Path, *, force_download=False):
+        self.name = name
         self.repo = repo
         self.cache_url = cache_url
         self.cache_dir = cache_dir
@@ -195,7 +201,7 @@ class CacheLocator:
 
     def find_exact(self, rev: Commit) -> Optional[OleanCache]:
         """ Find a cache that is for `rev` exactly """
-        log.info(f"Looking for mathlib oleans for {short_sha(rev)}")
+        log.info(f"Looking for {self.name} oleans for {short_sha(rev)}")
         if not self.force_download:
             log.info(f'  locally...')
             try:
@@ -203,17 +209,18 @@ class CacheLocator:
             except LookupError:
                 pass
             else:
-                log.info('  Found local mathlib oleans')
+                log.info(f'  Found local {self.name} oleans')
                 return local_c
 
-        log.info('  remotely...')
-        try:
-            remote_c = RemoteOleanCache(self, rev)
-        except requests.HTTPError:
-            pass
-        else:
-            log.info('  Found remote mathlib oleans')
-            return remote_c
+        if self.cache_url is not None:
+            log.info('  remotely...')
+            try:
+                remote_c = RemoteOleanCache(self, rev)
+            except requests.HTTPError:
+                pass
+            else:
+                log.info(f'  Found remote {self.name} oleans')
+                return remote_c
 
         return None
 
@@ -554,16 +561,16 @@ class LeanProject:
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
 
-        cache_locator = CacheLocator(repo, self.cache_url, DOT_MATHLIB,
+        cache_locator = CacheLocator(self.name, repo, self.cache_url, DOT_MATHLIB,
                                      force_download=self.force_download)
         cache = cache_locator.find_local_with_fallback(commit, fallback)
         log.info("Applying cache")
         self.clean_mathlib()
         self.mathlib_folder.mkdir(parents=True, exist_ok=True)
-        unpack_archive(cache.path, self.mathlib_folder)
+        unpack_archive(cache.path, self.mathlib_folder, oleans_only=self.is_mathlib)
         if cache.rev != repo.head.commit:
             # If the commit we unpacked isn't HEAD, then there might be some
-            # zombie lean files around. It is probably safe, but slower, to do
+            # zombie olean files around. It is probably safe, but slower, to do
             # this unconditionally.
             self.delete_zombies()
         # Let's now touch oleans, just in case
@@ -586,7 +593,7 @@ class LeanProject:
 
     def get_cache(self, rev: Optional[str] = None, force: bool = False,
                   fallback: CacheFallback = CacheFallback.SHOW) -> None:
-        """Tries to get olean cache.
+        """Tries to get olean cacfhe.
 
         Will raise LeanDownloadError or FileNotFoundError if no archive exists.
         """
@@ -597,10 +604,12 @@ class LeanProject:
         if self.is_mathlib:
             self.get_mathlib_olean(rev, fallback)
         else:
-            if rev:
-                rev = self.repo.rev_parse(rev).hexsha
-            unpack_archive(self.directory/'_cache'/(rev or str(self.rev)+'.tar.xz'),
-                           self.directory)
+            commit = self.repo.rev_parse(rev) if rev is not None else self.repo.head.commit
+            cache_locator = CacheLocator(self.name, self.repo, None, self.directory/'_cache',
+                                         force_download=self.force_download)
+            cache = cache_locator.find_local_with_fallback(commit, fallback)
+            log.info("Applying cache")
+            unpack_archive(cache.path, self.directory, oleans_only=True)
 
     @classmethod
     def from_git_url(cls, url: str, target: str = '',
