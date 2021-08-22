@@ -165,6 +165,7 @@ class RemoteOleanCache(OleanCache):
     This holds an open HTTP connection to the server from which the cache can be downloaded."""
     def __init__(self, locator: 'CacheLocator', rev):
         super().__init__(locator, rev)
+        assert self.locator.cache_url is not None
         self.req = requests.get(self.locator.cache_url + self.fname, stream=True)
         self.req.raise_for_status()
 
