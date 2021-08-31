@@ -842,12 +842,20 @@ class LeanProject:
 
     def make_all(self) -> None:
         """Creates all.lean importing everything from the project"""
+
+        # helper function to wrap file paths in double quotes if they
+        # contain dashes, so that lean accepts them as imports
+        def make_safe(s):
+            if "-" in s:
+                return "«" + s + "»"
+            return s
+
         with (self.src_directory/'all.lean').open('w') as all_file:
             for path in self.src_directory.glob('**/*.lean'):
                 rel = str(path.relative_to(self.src_directory).with_suffix(''))
                 if rel == 'all':
                     continue
-                all_file.write('import ' + rel.replace(os.path.sep, '.') + '\n')
+                all_file.write('import ' + ".".join(map(make_safe, rel.split(os.path.sep))) + '\n')
 
     def list_decls(self) -> Dict[str, DeclInfo]:
         """Collect declarations seen from this project, as a dictionary of
