@@ -121,7 +121,7 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
 def escape_identifier(s : str) -> str:
     """ Helper function to wrap _pieces_ of identifiers in double french quotes
     if they need to be wrapped by lean, we use this for file paths so we also escape
-    strings of the form `a.a` even though they are in valid identifiers.
+    strings of the form `a.a` even though they are valid identifiers.
     By escaping strings we ensure that lean accepts them as imports"""
     if re.fullmatch(LEAN_UNESCAPED_IDENTIFIER_RE, s):
         return s
