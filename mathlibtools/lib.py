@@ -855,10 +855,10 @@ class LeanProject:
 
         with (self.src_directory/'all.lean').open('w') as all_file:
             for path in self.src_directory.glob('**/*.lean'):
-                rel = str(path.relative_to(self.src_directory).with_suffix(''))
-                if rel == 'all':
+                rel = path.relative_to(self.src_directory).with_suffix('')
+                if rel == Path('all'):
                     continue
-                all_file.write('import ' + ".".join(map(escape_identifier, rel.split(os.path.sep))) + '\n')
+                all_file.write('import ' + ".".join(map(escape_identifier, rel.parts)) + '\n')
 
     def list_decls(self) -> Dict[str, DeclInfo]:
         """Collect declarations seen from this project, as a dictionary of
