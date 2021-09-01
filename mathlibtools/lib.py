@@ -70,7 +70,11 @@ DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
 
 MATHLIB_URL = 'https://github.com/leanprover-community/mathlib.git'
 LEAN_VERSION_RE = re.compile(r'(.*)\t.*refs/heads/lean-(.*)')
-LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(r"""(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*""")
+# This regex is from [1] and implements the logic at [2].
+# [1]: https://github.com/leanprover/vscode-lean/blob/2b43982c4c6305a0f20f156152a60613a6f1a683/syntaxes/lean.json#L193
+# [2]: https://github.com/leanprover-community/lean/blob/65ad4ffdb3abac75be748554e3cbe990fb1c6500/src/util/name.cpp#L65-L83
+LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(
+    r"(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*")
 
 VersionTuple = Tuple[int, int, int]
 
