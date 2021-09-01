@@ -571,10 +571,20 @@ class LeanProject:
 
     def mk_cache(self, force: bool = False) -> None:
         """Cache oleans for this project."""
-        if self.is_dirty and not force:
-            raise LeanDirtyRepo
         if not self.rev:
             raise ValueError('This project has no git commit.')
+        if not self.repo:
+            raise LeanProjectError('This project has no git repository.')
+        rev = self.rev
+        if self.is_dirty:
+            if force:
+                # create a new sha associated with the local changes
+                rev = self.repo.git.stash('create', 'stash from `mk-cache --force`')
+                rev = self.repo.rev_parse(rev)
+                log.info(f'Saving a cache for the dirty working tree at {short_sha(rev)}.')
+                log.info(f'Use `leanproject --get-cache {short_sha(rev)}` to load this cache in future.')
+            else:
+                raise LeanDirtyRepo
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
         archive = tgt_folder/(str(self.rev) + '.tar.xz')

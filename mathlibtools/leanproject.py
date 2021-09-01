@@ -196,7 +196,10 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
 @click.option('--force', default=False, is_flag=True,
               help='Make cache even if the repository is dirty or cache exists.')
 def mk_cache(force: bool = False) -> None:
-    """Cache olean files."""
+    """Cache olean files.
+
+    If run with `--force` on a dirty repository, this creates a temporary commit
+    to associate the dirty cache with."""
     try:
         proj().mk_cache(force)
     except LeanDirtyRepo as err:
