@@ -70,7 +70,7 @@ DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
 
 MATHLIB_URL = 'https://github.com/leanprover-community/mathlib.git'
 LEAN_VERSION_RE = re.compile(r'(.*)\t.*refs/heads/lean-(.*)')
-LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(r"""^(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*(\\.(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*)*$""")
+LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(r"""(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*(\\.(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*)*""")
 
 VersionTuple = Tuple[int, int, int]
 
@@ -847,7 +847,7 @@ class LeanProject:
         # helper function to wrap file paths in double quotes if they
         # contain dashes, so that lean accepts them as imports
         def escape_identifier(s : str) -> str:
-            if re.match(LEAN_UNESCAPED_IDENTIFIER_RE, s):
+            if re.fullmatch(LEAN_UNESCAPED_IDENTIFIER_RE, s):
                 return s
             return "«" + s + "»"
 
