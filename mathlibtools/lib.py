@@ -70,7 +70,7 @@ DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
 
 MATHLIB_URL = 'https://github.com/leanprover-community/mathlib.git'
 LEAN_VERSION_RE = re.compile(r'(.*)\t.*refs/heads/lean-(.*)')
-LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(r"""(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*(\\.(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*)*""")
+LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(r"""(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*""")
 
 VersionTuple = Tuple[int, int, int]
 
@@ -115,9 +115,10 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
             str(tgt_dir), members=tqdm(tarobj, desc='  files extracted', unit=''))
 
 def escape_identifier(s : str) -> str:
-    """ Helper function to wrap identifiers in double french quotes if they
-    need to be wrapped by lean, we use this for file paths so that lean accepts
-    them as imports"""
+    """ Helper function to wrap _pieces_ of identifiers in double french quotes
+    if they need to be wrapped by lean, we use this for file paths so we also escape
+    strings of the form `a.a` even though they are in valid identifiers.
+    By escaping strings we ensure that lean accepts them as imports"""
     if re.fullmatch(LEAN_UNESCAPED_IDENTIFIER_RE, s):
         return s
     return "«" + s + "»"
