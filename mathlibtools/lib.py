@@ -846,7 +846,7 @@ class LeanProject:
 
         # helper function to wrap file paths in double quotes if they
         # contain dashes, so that lean accepts them as imports
-        def make_safe(s):
+        def escape_identifier(s : str) -> str:
             if re.match(LEAN_UNESCAPED_IDENTIFIER_RE, s):
                 return s
             return "«" + s + "»"
