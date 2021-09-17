@@ -1,11 +1,17 @@
 import setuptools
+from os import path
 
-with open("README.md", "r") as fh:
+this_directory = path.abspath(path.dirname(__file__))
+
+with open(path.join(this_directory, "README.md"), encoding='utf-8') as fh:
     long_description = fh.read()
+
+with open(path.join(this_directory, 'mathlibtools', '_version.py'), encoding='utf-8') as f:
+    exec(f.read())
 
 setuptools.setup(
     name="mathlibtools",
-    version="1.0.0",
+    version=__version__,  # from _version.py
     author="The mathlib community",
     description="Lean prover mathlib supporting tools.",
     long_description=long_description,
