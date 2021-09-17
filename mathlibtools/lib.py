@@ -70,6 +70,11 @@ DOWNLOAD_URL_FILE = DOT_MATHLIB/'url'
 
 MATHLIB_URL = 'https://github.com/leanprover-community/mathlib.git'
 LEAN_VERSION_RE = re.compile(r'(.*)\t.*refs/heads/lean-(.*)')
+# This regex is from [1] and implements the logic at [2].
+# [1]: https://github.com/leanprover/vscode-lean/blob/2b43982c4c6305a0f20f156152a60613a6f1a683/syntaxes/lean.json#L193
+# [2]: https://github.com/leanprover-community/lean/blob/65ad4ffdb3abac75be748554e3cbe990fb1c6500/src/util/name.cpp#L65-L83
+LEAN_UNESCAPED_IDENTIFIER_RE = re.compile(
+    r"(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟](?:(?![λΠΣ])[_a-zA-Zα-ωΑ-Ωϊ-ϻἀ-῾℀-⅏𝒜-𝖟0-9'ⁿ-₉ₐ-ₜᵢ-ᵪ])*")
 
 VersionTuple = Tuple[int, int, int]
 
@@ -112,6 +117,15 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path]) -> None:
     with tarfile.open(fname) as tarobj:
         tarobj.extractall(
             str(tgt_dir), members=tqdm(tarobj, desc='  files extracted', unit=''))
+
+def escape_identifier(s : str) -> str:
+    """ Helper function to wrap _pieces_ of identifiers in double french quotes
+    if they need to be wrapped by lean, we use this for file paths so we also escape
+    strings of the form `a.a` even though they are valid identifiers.
+    By escaping strings we ensure that lean accepts them as imports"""
+    if re.fullmatch(LEAN_UNESCAPED_IDENTIFIER_RE, s):
+        return s
+    return "«" + s + "»"
 
 class OleanCache:
     """ A reference to a cache of oleans for a single commit.
@@ -842,12 +856,13 @@ class LeanProject:
 
     def make_all(self) -> None:
         """Creates all.lean importing everything from the project"""
+
         with (self.src_directory/'all.lean').open('w') as all_file:
             for path in self.src_directory.glob('**/*.lean'):
-                rel = str(path.relative_to(self.src_directory).with_suffix(''))
-                if rel == 'all':
+                rel = path.relative_to(self.src_directory).with_suffix('')
+                if rel == Path('all'):
                     continue
-                all_file.write('import ' + rel.replace(os.path.sep, '.') + '\n')
+                all_file.write('import ' + ".".join(map(escape_identifier, rel.parts)) + '\n')
 
     def list_decls(self) -> Dict[str, DeclInfo]:
         """Collect declarations seen from this project, as a dictionary of
