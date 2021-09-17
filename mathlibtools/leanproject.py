@@ -8,7 +8,7 @@ from git.exc import GitCommandError # type: ignore
 
 import click
 
-from mathlibtools.lib import (LeanProject, log, LeanDirtyRepo,
+from mathlibtools.lib import (LeanProject, log,
     InvalidLeanProject, LeanDownloadError, set_download_url, touch_oleans,
     CacheFallback)
 
@@ -218,11 +218,7 @@ def get_cache(rev: Optional[str], fallback: str) -> None:
     """
     fallback_enum = CacheFallback(fallback)
     try:
-        proj().get_cache(rev, force, fallback_enum)
-    except LeanDirtyRepo as err:
-        handle_exception(err,
-                'The repository is dirty, please commit changes before '
-                'fetching cache, or run this command with option --force.')
+        proj().get_cache(rev, fallback_enum)
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch cached oleans')
 
