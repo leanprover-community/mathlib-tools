@@ -9,6 +9,7 @@
   approximate cache.
 * `get-cache` no longer modifies `.lean` files in the working directory.
 * `mk-cache --force` no longer permits the working tree to be dirty.
+* `mk-all` now correctly handles filenames with special characters.
 
 ## 1.0.0 (2020-11-10)
 
