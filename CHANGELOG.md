@@ -1,5 +1,15 @@
 # Change log
 
+## 1.1.0dev (unreleased)
+
+* `get-mathlib-cache` no longer understands `--rev`; if you want to use a
+  different mathlib version, edit your `leanproject.toml`. If you are trying to get
+  the cache when working on mathlib itself, use `get-cache --rev`.
+* Add `--fallback` to `get-cache` for traversing the git history to find an
+  approximate cache.
+* `get-cache` no longer modifies `.lean` files in the working directory.
+* `mk-cache --force` no longer permits the working tree to be dirty.
+
 ## 1.0.0 (2020-11-10)
 
 * Only look for .xz archives

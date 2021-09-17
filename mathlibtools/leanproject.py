@@ -8,7 +8,7 @@ from git.exc import GitCommandError # type: ignore
 
 import click
 
-from mathlibtools.lib import (LeanProject, log, LeanDirtyRepo,
+from mathlibtools.lib import (LeanProject, log,
     InvalidLeanProject, LeanDownloadError, set_download_url, touch_oleans,
     CacheFallback)
 
@@ -194,27 +194,23 @@ def get_project(name: str, new_branch: bool, directory: str = '') -> None:
 
 @cli.command()
 @click.option('--force', default=False, is_flag=True,
-              help='Make cache even if the repository is dirty or cache exists.')
+              help='Make cache even if the cache already exists.')
 def mk_cache(force: bool = False) -> None:
-    """Cache olean files."""
-    try:
-        proj().mk_cache(force)
-    except LeanDirtyRepo as err:
-        handle_exception(err,
-                'The repository is dirty, please commit changes before '
-                'making cache, or run this command with option --force.')
+    """Cache olean files.
+
+    The repository must be clean in order to ensure there is a suitable git
+    commit to associate the hash with."""
+    proj().mk_cache(force)
 
 @cli.command()
-@click.option('--force', default=False, is_flag=True,
-              help='Get cache even if the repository is dirty.')
 @click.option('--rev', default=None, help='A git sha.')
 @click.option('--fallback', type=click.Choice(['none', 'show', 'download-first', 'download-all']),
               default='show', help="Behavior if no matching cache is available.")
-def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
-    """Restore cached olean files.
+def get_cache(rev: Optional[str], fallback: str) -> None:
+    """Restore olean files from a cache.
 
     \b
-    The fallback parameter is intepreted as follows:
+    The fallback parameter is interpreted as follows:
       none: fail without trying anything else
       show: show but do not download possible fallback caches
       download-first: show all fallback caches, download and apply the first
@@ -222,31 +218,17 @@ def get_cache(rev: Optional[str], force: bool, fallback: str) -> None:
     """
     fallback_enum = CacheFallback(fallback)
     try:
-        proj().get_cache(rev, force, fallback_enum)
-    except LeanDirtyRepo as err:
-        handle_exception(err,
-                'The repository is dirty, please commit changes before '
-                'fetching cache, or run this command with option --force.')
+        proj().get_cache(rev, fallback_enum)
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch cached oleans')
 
 @cli.command()
-@click.option('--rev', default=None, help='A git sha.')
-@click.option('--fallback', type=click.Choice(['none', 'show', 'download-first', 'download-all']),
-              default='show', help="Behavior if no matching cache is available.")
-def get_mathlib_cache(rev: Optional[str], fallback: str) -> None:
-    """Get mathlib .lean and .olean files, without upgrading.
-
-    \b
-    The fallback parameter is intepreted as follows:
-      none: fail without trying anything else
-      show: show but do not download possible fallback caches
-      download-first: show all fallback caches, download and apply the first
-      download-all: show and download all fallback caches, apply the first."""
-    fallback_enum = CacheFallback(fallback)
+def get_mathlib_cache() -> None:
+    """Get mathlib .lean and .olean files in a project depending on mathlib,
+    without upgrading."""
     project = proj()
     try:
-        project.get_mathlib_olean(rev, fallback_enum)
+        project.get_mathlib_olean()
     except (LeanDownloadError, FileNotFoundError) as err:
         handle_exception(err, 'Failed to fetch mathlib oleans')
 
