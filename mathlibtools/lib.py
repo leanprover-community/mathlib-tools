@@ -590,24 +590,18 @@ class LeanProject:
             raise LeanProjectError('This project has no git repository.')
         rev = self.rev
         if self.is_dirty:
-            if force:
-                # create a new sha associated with the local changes
-                rev = self.repo.git.stash('create', 'stash from `mk-cache --force`')
-                rev = self.repo.rev_parse(rev)
-                log.info(f'Saving a cache for the dirty working tree at {short_sha(rev)}.')
-                log.info(f'Use `leanproject --get-cache {short_sha(rev)}` to load this cache in future.')
-            else:
-                raise LeanDirtyRepo
+            raise LeanProjectError('Unable to make a cache for a dirty '
+                'repository. Commit or stash first.')
         tgt_folder = DOT_MATHLIB if self.is_mathlib else self.directory/'_cache'
         tgt_folder.mkdir(exist_ok=True)
         archive = tgt_folder/(str(self.rev) + '.tar.xz')
         if archive.exists() and not force:
-            log.info('Cache for revision {} already exists'.format(self.rev))
+            log.info('Cache for revision {} already exists, use --force to replace it.'.format(self.rev))
             return
         pack(self.directory, filter(Path.exists, [self.src_directory, self.directory/'test']),
              archive)
 
-    def get_cache(self, rev: Optional[str] = None, force: bool = False,
+    def get_cache(self, rev: Optional[str] = None,
                   fallback: CacheFallback = CacheFallback.SHOW) -> None:
         """Tries to get olean cache for the current project.
 
@@ -615,11 +609,6 @@ class LeanProject:
         """
         if not self.repo:
             raise LeanProjectError('This project has no git repository.')
-        if self.is_dirty and rev is None and not force:
-            # if the user passed `rev`, they deliberately want a cache that does
-            # not match their local changes anyway.
-            raise LeanDirtyRepo('Getting a new cache may result in a '
-                                'time-consuming rebuild.')
 
         if self.is_mathlib:
             cache_locator = CacheLocator(self.name, self.repo, self.cache_url, DOT_MATHLIB,
@@ -734,7 +723,7 @@ class LeanProject:
             self.clean_mathlib_dep()
         self.run_echo(['leanpkg', 'build'])
 
-    def clean_mathlib_dep(self, force: bool = False) -> None:
+    def clean_mathlib_dep(self) -> None:
         """Restore git sanity in a mathlib dependency"""
         assert not self.is_mathlib
         if self.mathlib_folder.exists():
