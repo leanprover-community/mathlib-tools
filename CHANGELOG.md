@@ -7,7 +7,7 @@
 * Add `--fallback` to `get-cache` for traversing the git history to find an
   approximate cache.
 * `get-cache` no longer modifies `lean` files in the working directory.
-* `mk-cache --force` no longer associates the cache with the current HEAD
+* `mk-cache --force` no longer permits the working tree to be dirty.
   revision, but instead creates a temporary commit in order to obtain a SHA1 id.
 
 ## 1.0.0 (2020-11-10)
