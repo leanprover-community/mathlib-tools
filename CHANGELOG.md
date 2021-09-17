@@ -3,7 +3,8 @@
 ## 1.1.0dev (unreleased)
 
 * `get-mathlib-cache` no longer understands `--rev`; if you want to use a
-  different mathlib version, edit your `leanproject.toml`.
+  different mathlib version, edit your `leanproject.toml`. If you are trying to get
+  the cache when working on mathlib itself, use `get-cache`.
 * Add `--fallback` to `get-cache` for traversing the git history to find an
   approximate cache.
 * `get-cache` no longer modifies `lean` files in the working directory.
