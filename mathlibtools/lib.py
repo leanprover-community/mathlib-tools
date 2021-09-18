@@ -15,7 +15,7 @@ import enum
 from datetime import datetime
 import concurrent.futures
 import tarfile
-from typing import Iterable, IO, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
+from typing import Iterable, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
 import shutil
 
@@ -24,7 +24,7 @@ from tqdm import tqdm # type: ignore
 import toml
 import yaml
 from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
-                 GitCommandError, BadName) # type: ignore
+                 GitCommandError, BadName, RemoteReference) # type: ignore
 from atomicwrites import atomic_write
 
 if TYPE_CHECKING:
@@ -954,9 +954,14 @@ class LeanProject:
                                     'please choose another name.')
         log.info('Checking out master...')
         self.repo.git.checkout('master')
+        origin = self.repo.remote().name
         self.upgrade_mathlib()
         log.info('Checking out new branch...')
         self.repo.git.checkout('-b', branch_name)
+        log.info(f'Setting remote tracking to {origin}...')
+        rem_ref = RemoteReference(self.repo,
+                                  f"refs/remotes/{origin}/{branch_name}")
+        self.repo.head.reference.set_tracking_branch(rem_ref)
         log.info('Done.')
 
     def rebase(self, force: bool = False) -> None:
