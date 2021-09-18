@@ -1,7 +1,9 @@
 # Change log
 
-## 1.1.0dev (unreleased)
+## 1.1.0 (2021-09-18)
 
+* Add `reduce-imports` command
+* Add `pull` command
 * `get-mathlib-cache` no longer understands `--rev`; if you want to use a
   different mathlib version, edit your `leanproject.toml`. If you are trying to get
   the cache when working on mathlib itself, use `get-cache --rev`.
