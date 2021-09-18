@@ -997,6 +997,7 @@ class LeanProject:
         if self.is_dirty:
             raise LeanDirtyRepo('Cannot pull because repository is dirty')
         old_mathlib = self.mathlib_rev
+        assert self.repo
         log.info(f"Pulling from {remote}")
         self.repo.remote(remote).pull(self.repo.active_branch)
         self.read_config()
