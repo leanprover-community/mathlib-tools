@@ -325,7 +325,7 @@ def import_graph(to: Optional[str], from_: Optional[str], output: str) -> None:
               help='Instead of printing a list of removable imports, print a sed script that can be run to remove the imports.')
 @click.argument('file', default=None, required=False)
 def reduce_imports(file: str, sed: bool = False) -> None:
-    """List imports that can be removed in the project in the format 
+    """List imports that can be removed in the project in the format
     `("source.file", ["removable.import", "another.removable.import"])`.
 
     Argument '--file' should be specified as a
@@ -375,6 +375,15 @@ def rebase(force: bool = False) -> None:
     On mathlib, update master, get oleans and rebase current branch.
     """
     proj().rebase(force)
+
+
+@cli.command()
+@click.argument('remote', default='origin')
+def pull(remote: str = '') -> None:
+    """
+    Pull and get mathlib oleans. Default remote is 'origin'.
+    """
+    proj().pull(remote)
 
 
 def safe_cli():

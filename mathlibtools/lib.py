@@ -524,6 +524,8 @@ class LeanProject:
             assert self.repo
             return self.repo
         else:
+            if not self.mathlib_folder.exists():
+                self.run_echo(['leanpkg', 'configure'])
             return Repo(self.mathlib_folder)
 
 
@@ -987,3 +989,22 @@ class LeanProject:
         log.info('Rebasing...')
         self.repo.git.rebase('master')
         log.info('Done')
+
+    def pull(self, remote: str='origin') -> None:
+        """
+        Pull from the given remote and get mathlib oleans.
+        """
+        if self.is_dirty:
+            raise LeanDirtyRepo('Cannot pull because repository is dirty')
+        old_mathlib = self.mathlib_rev
+        log.info(f"Pulling from {remote}")
+        self.repo.remote(remote).pull(self.repo.active_branch)
+        self.read_config()
+        if self.is_mathlib:
+            self.get_cache()
+        else:
+            if self.mathlib_rev != old_mathlib:
+                log.info("Updating mathlib")
+                self.run_echo(['leanpkg', 'configure'])
+            self.get_mathlib_olean()
+
