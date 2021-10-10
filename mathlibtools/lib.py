@@ -799,7 +799,7 @@ class LeanProject:
             raise LeanProjectError('This project has no git repository.')
         hook_dir = Path(self.repo.git_dir)/'hooks'
         src = Path(__file__).parent
-        log.info('This script will copy post-commit and post-checkout scripts to ', hook_dir)
+        log.info('This script will copy post-commit and post-checkout scripts to %s', hook_dir)
         rep = input("Do you want to proceed (y/n)? ")
         if rep in ['y', 'Y']:
             shutil.copy(str(src/'post-commit'), str(hook_dir))
