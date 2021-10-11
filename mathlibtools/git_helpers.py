@@ -1,13 +1,13 @@
-import git   # type: ignore
+from git import Commit   # type: ignore
 from typing import Callable, Iterator, Tuple, List
 
 
-def short_sha(rev: git.Commit) -> str:
+def short_sha(rev: Commit) -> str:
     """ Truncate `rev.hexsha` without ambiguity """
     return rev.repo.git.rev_parse(rev.hexsha, short=True)
 
 
-def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
+def visit_ancestors(rev: Commit) -> Iterator[Tuple[Commit, Callable]]:
     r"""
     Iterate over history, optionally pruning all ancestors of a given commit.
 
@@ -55,12 +55,12 @@ def visit_ancestors(rev: git.Commit) -> Iterator[Tuple[git.Commit, Callable]]:
     and ``G``, it will always be pruned before it is visited.
     """
     repo = rev.repo
-    pruned_commits : List[git.Commit] = []  # the commits to ignore along with their ancestors
+    pruned_commits : List[Commit] = []  # the commits to ignore along with their ancestors
     skip_n = 0  # the index to resume the iteration
     while True:
         args = [rev] + ['--not'] + pruned_commits
         proc = repo.git.rev_list(*args, as_process=True, skip=skip_n, topo_order=True)
-        for c in git.Commit._iter_from_process_or_stream(repo, proc):
+        for c in Commit._iter_from_process_or_stream(repo, proc):
             # build a temporary function to hand back to the user
             do_prune = False
             def prune():

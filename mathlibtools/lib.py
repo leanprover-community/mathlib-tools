@@ -423,12 +423,13 @@ class LeanProject:
                   force_download: bool = False,
                   upgrade_lean: bool = True) -> 'LeanProject':
         """Builds a LeanProject from a Path object"""
+        repo: Optional[Repo] = None
+        is_dirty = False
+        rev = ''
         try:
             repo = Repo(path, search_parent_directories=True)
         except InvalidGitRepositoryError:
-            repo = None
-            is_dirty = False
-            rev = ''
+            pass
         if repo:
             if repo.bare:
                 raise InvalidLeanProject('Git repository is not initialized')
@@ -670,6 +671,7 @@ class LeanProject:
                 log.error('Invalid git branch')
                 shutil.rmtree(target)
                 raise err
+        assert repo.working_dir is not None
         proj = cls.from_path(Path(repo.working_dir), cache_url, force_download)
         proj.run_echo(['leanpkg', 'configure'])
         if 'mathlib' in proj.deps or proj.is_mathlib:
@@ -951,7 +953,7 @@ class LeanProject:
             raise LeanProjectError('This operation is for mathlib only.')
         if not self.repo:
             raise LeanProjectError('This project has no git repository.')
-        if branch_name in self.repo.branches:
+        if branch_name in self.repo.branches: # type: ignore
             raise LeanProjectError(f'The branch {branch_name} already exists, '
                                     'please choose another name.')
         log.info('Checking out master...')
