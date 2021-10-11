@@ -580,7 +580,7 @@ class LeanProject:
         if not (self.directory/'leanpkg.path').exists():
             self.run(['leanpkg', 'configure'])
 
-        cache_locator = CacheLocator(self.name, repo, self.cache_url, DOT_MATHLIB,
+        cache_locator = CacheLocator('mathlib', repo, self.cache_url, DOT_MATHLIB,
                                      force_download=self.force_download)
 
         # We want an exact match here; if we can't find one, then the user should
