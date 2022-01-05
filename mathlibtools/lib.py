@@ -1,7 +1,9 @@
+from textwrap import dedent
 from pathlib import Path
 import logging
 import tempfile
 import shutil
+import sys
 import tarfile
 import signal
 import re
@@ -59,6 +61,16 @@ class InvalidLeanVersion(Exception):
 
 class LeanProjectError(Exception):
     pass
+
+class WrongDefaultLeanVersion(Exception):
+    def __str__(self):
+        return dedent(
+            """
+            leanproject is meant to be used with Lean 3, but your elan default is Lean 4.
+            If you do not mean for this to be the case, run elan default stable.
+            Otherwise, use lake directly.
+            """,
+        ).strip("\n")
 
 DOT_MATHLIB = Path(os.environ.get("MATHLIB_CACHE_DIR") or
                    Path.home()/'.mathlib')
@@ -688,7 +700,22 @@ class LeanProject:
         else:
             if path.exists():
                 raise FileExistsError('Directory ' + str(path) + ' already exists')
-            subprocess.run(['leanpkg', 'new', str(path)], check=True)
+            try:
+                leanpkg_new = subprocess.run(
+                    ['leanpkg', 'new', str(path)],
+                    capture_output=True,
+                    check=True,
+                )
+            except subprocess.CalledProcessError:
+                lean_process = subprocess.run(
+                    ["lean", "--version"], capture_output=True,
+                )
+                if b"version 4" in lean_process.stdout:
+                    raise WrongDefaultLeanVersion()
+                raise
+            else:
+                sys.stdout.buffer.write(leanpkg_new.stdout)
+
 
         proj = cls.from_path(path, cache_url, force_download)
         proj.lean_version = mathlib_lean_version()
