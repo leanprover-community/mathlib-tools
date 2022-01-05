@@ -290,13 +290,13 @@ class CacheLocator:
             if len(caches) > 1:
                 archive_items = ''.join([f'\n * {short_sha(c.rev)}' for c in caches])
                 commit_args = ''.join([f' {short_sha(c.rev)}^!' for c in caches])
-                log.warn(
+                log.warning(
                     f"No cache was available for {short_sha(rev)}.\n"
                     f"There are multiple viable caches from parent commits:{archive_items}\n"
                     f"To see the commits in question, run:\n"
                     f"  git log --graph {short_sha(rev)}{commit_args}")
             else:
-                log.warn(
+                log.warning(
                     f"No cache was available for {short_sha(rev)}. "
                     f"A cache was found for the ancestor {short_sha(cache.rev)}.\n"
                     f"To see the intermediate commits, run:\n"
@@ -561,9 +561,10 @@ class LeanProject:
         mathlib)"""
         if self.is_mathlib:
             # user should have run `get-cache` not `get-mathlib-cache
-            log.warn("`get-mathlib-cache` is for projects which depend on "
-                     "mathlib, not for mathlib itself. "
-                     "Running `get-cache` instead.")
+            log.warning(
+                "`get-mathlib-cache` is for projects which depend on "
+                "mathlib, not for mathlib itself. "
+                "Running `get-cache` instead.")
             return self.get_cache()
 
         repo = self.mathlib_repo
