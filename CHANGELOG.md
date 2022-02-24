@@ -1,5 +1,9 @@
 # Change log
 
+## 1.1.1 (2022-02-24)
+
+* Fix mathlib update bug for project depending on mathlib
+
 ## 1.1.0 (2021-09-18)
 
 * Add `reduce-imports` command
