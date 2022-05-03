@@ -16,6 +16,11 @@ class ImportGraph(nx.DiGraph):
         path = path or self.base_path/'import_graph.dot'
         nx.drawing.nx_pydot.to_pydot(self).write_dot(str(path))
 
+    def to_rawdot(self, path: Optional[Path] = None) -> None:
+        """Writes itself to a raw dot file (without layout)."""
+        path = path or self.base_path/'import_graph.rawdot'
+        nx.drawing.nx_pydot.write_dot(self, str(path))
+
     def to_gexf(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for Gephi."""
         path = path or self.base_path/'import_graph.gexf'
@@ -29,6 +34,8 @@ class ImportGraph(nx.DiGraph):
     def write(self, path: Path):
         if path.suffix == '.dot':
             self.to_dot(path)
+        elif path.suffix == '.rawdot':
+            self.to_raw(path)
         elif path.suffix == '.gexf':
             self.to_gexf(path)
         elif path.suffix == '.graphml':
@@ -43,7 +50,7 @@ class ImportGraph(nx.DiGraph):
                                    stdout=outf)
         else:
             raise ValueError('Unsupported graph output format. '
-                             'Use .dot, .gexf, .graphml or a valid '
+                             'Use .dot, .rawdot, .gexf, .graphml or a valid '
                              'graphviz output format (eg. .pdf).')
 
     def ancestors(self, node: str) -> 'ImportGraph':
