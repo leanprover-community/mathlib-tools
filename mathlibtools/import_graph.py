@@ -35,7 +35,7 @@ class ImportGraph(nx.DiGraph):
         if path.suffix == '.dot':
             self.to_dot(path)
         elif path.suffix == '.rawdot':
-            self.to_raw(path)
+            self.to_rawdot(path)
         elif path.suffix == '.gexf':
             self.to_gexf(path)
         elif path.suffix == '.graphml':
