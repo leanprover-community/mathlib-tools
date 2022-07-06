@@ -572,7 +572,7 @@ class LeanProject:
             commit = repo.rev_parse(self.mathlib_rev)
         except (BadName, ValueError):
             # presumably the mathlib folder is outdated
-            log.info("Can't find the required mathlib revision, will try to update"
+            log.info("Can't find the required mathlib revision, will try to update "
                      "mathlib git repository")
             self.run_echo(['leanpkg', 'configure'])
             commit = repo.rev_parse(self.mathlib_rev)
