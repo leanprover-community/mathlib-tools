@@ -1,5 +1,9 @@
 # Change log
 
+## 1.1.2 (2022-08-25)
+
+- Fix a memory issue when listing declarations
+
 ## 1.1.1 (2022-02-24)
 
 * Fix mathlib update bug for project depending on mathlib
