@@ -39,6 +39,6 @@ do curr_env ← run_tactic get_env,
    let decls := curr_env.fold [] list.cons,
    let filtered_decls := decls.filter
      (λ x, not (to_name x).is_internal),
-   let pieces := itersplit filtered_decls 3,
+   let pieces := itersplit filtered_decls 5,
    pieces.mmap' (λ l, l.mmap' (print_item_crawl curr_env h)),
    close h
