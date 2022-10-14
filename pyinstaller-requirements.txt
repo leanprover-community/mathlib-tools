@@ -15,7 +15,7 @@ pydot==1.4.2
 PyGithub==1.54.1
 pyinstaller==5.5
 pyinstaller-hooks-contrib==2022.10
-PyJWT==1.7.1
+PyJWT==2.4.0
 pyparsing==2.4.7
 pywin32-ctypes==0.2.0
 PyYAML==5.4.1
