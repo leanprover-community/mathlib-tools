@@ -848,8 +848,6 @@ class LeanProject:
                     continue
                 imp_label = str(imp_rel.with_suffix('')).replace(os.sep, '.')
                 G.add_edge(imp_label, label)
-        for node in G:
-            G.nodes[node]['label'] = node
         self._import_graph = G
         return G
 
@@ -1012,3 +1010,24 @@ class LeanProject:
                 self.run_echo(['leanpkg', 'configure'])
             self.get_mathlib_olean()
 
+    def port_status(self, url: str = 'https://raw.githubusercontent.com/wiki/leanprover-community/mathlib/mathlib4-port-status.md') -> None:
+        """
+        Color nodes on the graph based on port status. Done in place to the graph nodes.
+
+        Args:
+            url: md or yaml file with "file: label" content, by default, from the wiki
+        """
+        def yaml_md_load(wikicontent: bytes):
+            return yaml.safe_load(wikicontent.replace(b"```", b""))
+
+        port_labels: Dict[str, str] = yaml_md_load(requests.get('https://raw.githubusercontent.com/wiki/leanprover-community/mathlib/mathlib4-port-status.md').content)
+
+        for filename, status in port_labels.items():
+            if 'yes' in status.lower():
+                node = self.import_graph.nodes[filename]
+                node["fillcolor"] = "green"
+                node["style"] = "filled"
+            elif 'no' in status.lower():
+                node = self.import_graph.nodes[filename]
+                node["fillcolor"] = "red"
+                node["style"] = "filled"

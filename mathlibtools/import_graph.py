@@ -76,7 +76,6 @@ class ImportGraph(nx.DiGraph):
 
     def exclude_tactics(self) -> 'ImportGraph':
         """Removes all files in src/tactic/ and src/meta/ from the graph."""
-        H = self.subgraph([n for n,a in self.nodes(data=True) if
-          not a['label'].startswith('tactic.') and not a['label'].startswith('meta.')])
+        H = self.subgraph([n for n in self.nodes if not str.startswith(n, ('tactic.', 'meta.'))])
         H.base_path = self.base_path
         return H
