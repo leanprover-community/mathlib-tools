@@ -27,6 +27,8 @@ from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
                  GitCommandError, BadName, RemoteReference) # type: ignore
 from atomicwrites import atomic_write
 
+from mathlibtools.file_status import FileStatus
+
 if TYPE_CHECKING:
     from mathlibtools.import_graph import ImportGraph
 
@@ -1024,24 +1026,17 @@ class LeanProject:
 
         port_labels: Dict[str, str] = yaml_md_load(requests.get(url).content)
 
-        # colors from X11
         for filename, status in port_labels.items():
             if filename not in self.import_graph.nodes:
                 continue
             node = self.import_graph.nodes[filename]
-            if 'yes' in status.lower():
-                node["fillcolor"] = "green"
-                node["style"] = "filled"
-            elif 'no' in status.lower() and len(status.strip()) > 2:
-                node["fillcolor"] = "tan1"
-                node["style"] = "filled"
+            node["status"] = FileStatus.assign(status)
         # somehow missing from yaml
         for node_name, node in self.import_graph.nodes(data=True):
             if node_name not in port_labels:
-                node["fillcolor"] = "orchid"
-                node["style"] = "filled"
+                node["status"] = FileStatus.missing()
         finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
-                       if attrs.get("fillcolor") == "green"}
+                          if attrs.get("status") == FileStatus.yes()}
         # tag nodes that have finished parents, depth of 1
         for node in finished_nodes:
             for _, target in self.import_graph.out_edges(node):
@@ -1051,5 +1046,9 @@ class LeanProject:
                 parents = {parent for parent, _ in self.import_graph.in_edges(target)}
                 if parents.issubset(finished_nodes):
                     target_node = self.import_graph.nodes[target]
-                    target_node["fillcolor"] = "turquoise1"
-                    target_node["style"] = "filled"
+                    target_node["status"] = FileStatus.ready()
+        for _, node in self.import_graph.nodes(data=True):
+            if not node.get("status"):
+                continue
+            node["style"] = "filled"
+            node["fillcolor"] = node["status"].color
