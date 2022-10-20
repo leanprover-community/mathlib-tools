@@ -1035,7 +1035,21 @@ class LeanProject:
             elif 'no' in status.lower() and len(status.strip()) > 2:
                 node["fillcolor"] = "tan1"
                 node["style"] = "filled"
+        # somehow missing from yaml
         for node_name, node in self.import_graph.nodes(data=True):
             if node_name not in port_labels:
-                node["fillcolor"] = "turquoise1"
+                node["fillcolor"] = "orchid"
                 node["style"] = "filled"
+        finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
+                       if attrs.get("fillcolor") == "green"}
+        # tag nodes that have finished parents, depth of 1
+        for node in finished_nodes:
+            for _, target in self.import_graph.out_edges(node):
+                # we don't need to redo a finished node
+                if target in finished_nodes:
+                    continue
+                parents = {parent for parent, _ in self.import_graph.in_edges(target)}
+                if parents.issubset(finished_nodes):
+                    target_node = self.import_graph.nodes[target]
+                    target_node["fillcolor"] = "turquoise1"
+                    target_node["style"] = "filled"
