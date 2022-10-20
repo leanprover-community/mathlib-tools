@@ -1024,6 +1024,7 @@ class LeanProject:
 
         port_labels: Dict[str, str] = yaml_md_load(requests.get(url).content)
 
+        # colors from X11
         for filename, status in port_labels.items():
             if filename not in self.import_graph.nodes:
                 continue
@@ -1031,6 +1032,10 @@ class LeanProject:
             if 'yes' in status.lower():
                 node["fillcolor"] = "green"
                 node["style"] = "filled"
-            elif 'no' in status.lower():
-                node["fillcolor"] = "red"
+            elif 'no' in status.lower() and len(status.strip()) > 2:
+                node["fillcolor"] = "tan1"
+                node["style"] = "filled"
+        for node_name, node in self.import_graph.nodes(data=True):
+            if node_name not in port_labels:
+                node["fillcolor"] = "turquoise1"
                 node["style"] = "filled"
