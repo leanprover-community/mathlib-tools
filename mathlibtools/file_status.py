@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Set
 
 @dataclass(frozen=True)
 class FileStatus:
@@ -9,33 +9,33 @@ class FileStatus:
   `color` is how the node should be colored if it has the status
   """
 
-  string_match: Tuple[str]
+  string_match: Set[str]
   # colors from X11
   color: str
 
   @classmethod
   def yes(cls) -> "FileStatus":
-    return cls(("yes"), "green")
+    return cls({"yes"}, "green")
 
   @classmethod
   def pr(cls) -> "FileStatus":
-    return cls(("no", "pr"), "lightskyblue")
+    return cls({"no", "pr"}, "lightskyblue")
 
   @classmethod
   def wip(cls) -> "FileStatus":
-    return cls(("no", "wip"), "lightpink")
+    return cls({"no", "wip"}, "lightpink")
 
   @classmethod
   def no(cls) -> "FileStatus":
-    return cls(("no"), "orange")
+    return cls({"no"}, "orange")
 
   @classmethod
   def missing(cls) -> "FileStatus":
-    return cls((), "orchid1")
+    return cls({}, "orchid1")
 
   @classmethod
   def ready(cls) -> "FileStatus":
-    return cls((), "turquoise1")
+    return cls({}, "turquoise1")
 
   def matches(self, comment: str) -> bool:
     return all(substring.lower() in comment.lower() for substring in self.string_match)
