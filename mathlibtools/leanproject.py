@@ -321,11 +321,12 @@ def import_graph(
     For .dot, .pdf, .svg, or .png output you will need to install 'graphviz' first.
     """
     project = proj()
-    if port_status or port_status_url:
-        project.port_status(port_status_url)
     graph = project.import_graph
     if exclude:
         graph = graph.exclude_tactics()
+        project._import_graph = graph
+    if port_status or port_status_url:
+        project.port_status(port_status_url)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:

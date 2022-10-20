@@ -1039,6 +1039,7 @@ class LeanProject:
                           if attrs.get("status") == FileStatus.yes()}
         # tag nodes that have finished parents, depth of 1
         for node in finished_nodes:
+            # does not get root nodes because they are not at end of an out_edge
             for _, target in self.import_graph.out_edges(node):
                 # we don't need to redo a finished node
                 if target in finished_nodes:
@@ -1047,6 +1048,12 @@ class LeanProject:
                 if parents.issubset(finished_nodes):
                     target_node = self.import_graph.nodes[target]
                     target_node["status"] = FileStatus.ready()
+        # now to get root nodes
+        for target, degree in self.import_graph.in_degree():
+            target_node = self.import_graph.nodes[target]
+            if degree > 0 or target_node.get("status"):
+                continue
+            target_node["status"] = FileStatus.ready()
         for _, node in self.import_graph.nodes(data=True):
             if not node.get("status"):
                 continue
