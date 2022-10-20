@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Set
 
 @dataclass(frozen=True)
@@ -9,36 +9,38 @@ class FileStatus:
   `color` is how the node should be colored if it has the status
   """
 
-  string_match: Set[str]
-  # colors from X11
   color: str
+  prefix: Optional[str] = None
+  string_match: Set[str] = field(default_factory=set)
+  # colors from X11
 
   @classmethod
   def yes(cls) -> "FileStatus":
-    return cls({"yes"}, "green")
+    return cls("green", "Yes")
 
   @classmethod
   def pr(cls) -> "FileStatus":
-    return cls({"no", "pr"}, "lightskyblue")
+    return cls("lightskyblue", "No", {"pr"})
 
   @classmethod
   def wip(cls) -> "FileStatus":
-    return cls({"no", "wip"}, "lightskyblue")
+    return cls("lightskyblue", "No", {"wip"})
 
   @classmethod
   def no(cls) -> "FileStatus":
-    return cls({"no"}, "orange")
+    return cls("orange", "No")
 
   # @classmethod
   # def missing(cls) -> "FileStatus":
-  #   return cls(set(), "orchid1")
+  #   return cls("orchid1")
 
   @classmethod
   def ready(cls) -> "FileStatus":
-    return cls(set(), "turquoise1")
+    return cls("turquoise1")
 
   def matches(self, comment: str) -> bool:
-    return all(substring.lower() in comment.lower() for substring in self.string_match)
+    return comment.startswith(self.prefix) and \
+        all(substring.lower() in comment.lower() for substring in self.string_match)
 
   @classmethod
   def assign(cls, comment: str) -> Optional["FileStatus"]:
