@@ -298,8 +298,19 @@ def global_upgrade() -> None:
               help='Return only imports starting from this file.')
 @click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
               help='Excludes tactics and meta.')
+@click.option('--port-status', default=False, is_flag=True,
+              help='Color by mathlib4 porting status')
+@click.option('--port-status-url', default=None,
+              help='URL of yaml with mathlib4 port status')
 @click.argument('output', default='import_graph.dot')
-def import_graph(to: Optional[str], from_: Optional[str], exclude : bool, output: str) -> None:
+def import_graph(
+    to: Optional[str],
+    from_: Optional[str],
+    exclude : bool,
+    port_status: bool,
+    port_status_url: Optional[str],
+    output: str
+) -> None:
     """Write an import graph for this project.
 
     Arguments for '--to' and '--from' should be specified as
@@ -313,6 +324,9 @@ def import_graph(to: Optional[str], from_: Optional[str], exclude : bool, output
     graph = project.import_graph
     if exclude:
         graph = graph.exclude_tactics()
+        project._import_graph = graph
+    if port_status or port_status_url:
+        project.port_status(port_status_url)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:
