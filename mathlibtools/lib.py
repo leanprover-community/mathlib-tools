@@ -1032,9 +1032,9 @@ class LeanProject:
             node = self.import_graph.nodes[filename]
             node["status"] = FileStatus.assign(status)
         # somehow missing from yaml
-        for node_name, node in self.import_graph.nodes(data=True):
-            if node_name not in port_labels:
-                node["status"] = FileStatus.missing()
+        # for node_name, node in self.import_graph.nodes(data=True):
+        #     if node_name not in port_labels:
+        #         node["status"] = FileStatus.missing()
         finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
                           if attrs.get("status") == FileStatus.yes()}
         # tag nodes that have finished parents, depth of 1

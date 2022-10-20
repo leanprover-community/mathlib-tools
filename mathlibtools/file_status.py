@@ -23,15 +23,15 @@ class FileStatus:
 
   @classmethod
   def wip(cls) -> "FileStatus":
-    return cls({"no", "wip"}, "lightpink")
+    return cls({"no", "wip"}, "lightskyblue")
 
   @classmethod
   def no(cls) -> "FileStatus":
     return cls({"no"}, "orange")
 
-  @classmethod
-  def missing(cls) -> "FileStatus":
-    return cls(set(), "orchid1")
+  # @classmethod
+  # def missing(cls) -> "FileStatus":
+  #   return cls(set(), "orchid1")
 
   @classmethod
   def ready(cls) -> "FileStatus":
