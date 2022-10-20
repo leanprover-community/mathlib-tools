@@ -31,11 +31,11 @@ class FileStatus:
 
   @classmethod
   def missing(cls) -> "FileStatus":
-    return cls({}, "orchid1")
+    return cls(set(), "orchid1")
 
   @classmethod
   def ready(cls) -> "FileStatus":
-    return cls({}, "turquoise1")
+    return cls(set(), "turquoise1")
 
   def matches(self, comment: str) -> bool:
     return all(substring.lower() in comment.lower() for substring in self.string_match)
