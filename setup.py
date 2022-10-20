@@ -30,5 +30,5 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=['toml>=0.10.0', 'PyGithub', 'certifi', 'gitpython>=2.1.11', 'requests',
                       'Click', 'tqdm', 'networkx', 'pydot',
-                      'PyYAML>=3.13', 'atomicwrites', 'dataclasses']
+                      'PyYAML>=3.13', 'atomicwrites', "dataclasses; python_version=='3.6'"]
 )
