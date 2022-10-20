@@ -39,7 +39,7 @@ class FileStatus:
     return cls("turquoise1")
 
   def matches(self, comment: str) -> bool:
-    return comment.startswith(self.prefix) and \
+    return (self.prefix is None or comment.startswith(self.prefix)) and \
         all(substring.lower() in comment.lower() for substring in self.string_match)
 
   @classmethod
