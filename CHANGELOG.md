@@ -1,5 +1,15 @@
 # Change log
 
+## 1.2.0 (2022-10-23)
+
+* import-graph: allow to write raw dot file to ".rawdot" without layout
+  info
+* Add `--exclude-tactics` flag to exclude tactics in import-graph
+* Add `--port-status` flag to the `import-graph` command to color node by
+  porting status
+* Add `--port-status-url` option to specify a url for the YaML file
+  containing porting status information.
+
 ## 1.1.1 (2022-02-24)
 
 * Fix mathlib update bug for project depending on mathlib
