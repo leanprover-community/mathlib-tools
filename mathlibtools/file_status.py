@@ -28,7 +28,7 @@ class FileStatusNew:
         default=Ported.no, metadata=config(encoder=lambda x: str(x.value))
     )
     pr_status: Optional[PRStatus] = field(
-        default=None, metadata=config(encoder=lambda x: x if x is None else str(x))
+        default=None, metadata=config(encoder=lambda x: x if x is None else str(x.value))
     )
     mathlib4_pr: Optional[int] = None
     mathlib_hash: Optional[str] = None
