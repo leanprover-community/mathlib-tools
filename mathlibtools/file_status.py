@@ -134,7 +134,7 @@ class PortStatus:
 
     @classmethod
     def deserialize_old(cls, yaml: Dict[str, str]) -> "PortStatus":
-        return cls(file_statuses={k: FileStatus.parse_old(v) for k, v in yaml.items()})
+        return cls(file_statuses={k: FileStatusNew.parse_old(v) for k, v in yaml.items()})
 
     def serialize(self) -> Dict[str, Dict[str, Union[int, str, None]]]:
         return yaml.dump(self.to_dict()["file_statuses"])
