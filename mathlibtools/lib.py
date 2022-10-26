@@ -27,7 +27,7 @@ from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
                  GitCommandError, BadName, RemoteReference) # type: ignore
 from atomicwrites import atomic_write
 
-from mathlibtools.file_status import FileStatus
+from mathlibtools.file_status import FileStatus, PortStatus
 
 if TYPE_CHECKING:
     from mathlibtools.import_graph import ImportGraph
@@ -1019,24 +1019,14 @@ class LeanProject:
         Args:
             url: md or yaml file with "file: label" content, by default, from the wiki
         """
-        if url is None:
-            url = 'https://raw.githubusercontent.com/wiki/leanprover-community/mathlib/mathlib4-port-status.md'
-        def yaml_md_load(wikicontent: bytes):
-            return yaml.safe_load(wikicontent.replace(b"```", b""))
 
-        port_labels: Dict[str, str] = yaml_md_load(requests.get(url).content)
 
-        for filename, status in port_labels.items():
-            if filename not in self.import_graph.nodes:
-                continue
-            node = self.import_graph.nodes[filename]
-            node["status"] = FileStatus.assign(status)
-        # somehow missing from yaml
-        # for node_name, node in self.import_graph.nodes(data=True):
-        #     if node_name not in port_labels:
-        #         node["status"] = FileStatus.missing()
+        port_status = PortStatus.deserialize_old(PortStatus.old_yaml())
+
+        for node_name, node in self.import_graph.nodes(data=True):
+            node["status"] = port_status.file_statuses.get(node_name, FileStatus())
         finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
-                          if attrs.get("status") == FileStatus.yes()}
+                          if attrs.get("status").ported}
         # tag nodes that have finished parents, depth of 1
         for node in finished_nodes:
             # does not get root nodes because they are not at end of an out_edge
@@ -1047,15 +1037,15 @@ class LeanProject:
                 parents = {parent for parent, _ in self.import_graph.in_edges(target)}
                 if parents.issubset(finished_nodes):
                     target_node = self.import_graph.nodes[target]
-                    target_node["status"] = FileStatus.ready()
+                    target_node["status"].comments = "ready"
         # now to get root nodes
         for target, degree in self.import_graph.in_degree():
             target_node = self.import_graph.nodes[target]
-            if degree > 0 or target_node.get("status"):
+            if degree > 0 or target_node["status"].comments:
                 continue
-            target_node["status"] = FileStatus.ready()
+            target_node["status"].comments = "ready"
         for _, node in self.import_graph.nodes(data=True):
             if not node.get("status"):
                 continue
             node["style"] = "filled"
-            node["fillcolor"] = node["status"].color
+            node["fillcolor"] = node["status"].color()
