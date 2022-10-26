@@ -302,6 +302,8 @@ def global_upgrade() -> None:
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,
               help='URL of yaml with mathlib4 port status')
+@click.option('--mathlib4', default=None,
+              help='Local directory of mathlib4 repo')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
@@ -309,6 +311,7 @@ def import_graph(
     exclude : bool,
     port_status: bool,
     port_status_url: Optional[str],
+    mathlib4: Optional[str],
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -326,7 +329,7 @@ def import_graph(
         graph = graph.exclude_tactics()
         project._import_graph = graph
     if port_status or port_status_url:
-        project.port_status(port_status_url)
+        project.port_status(port_status_url, mathlib4=None if mathlib4 is None else Path(mathlib4))
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:

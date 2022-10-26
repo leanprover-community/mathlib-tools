@@ -1012,7 +1012,7 @@ class LeanProject:
                 self.run_echo(['leanpkg', 'configure'])
             self.get_mathlib_olean()
 
-    def port_status(self, url: Optional[str] = None) -> None:
+    def port_status(self, url: Optional[str] = None, mathlib4: Optional[Path] = None) -> None:
         """
         Color nodes on the graph based on port status. Done in place to the graph nodes.
 
@@ -1020,6 +1020,15 @@ class LeanProject:
             url: md or yaml file with "file: label" content, by default, from the wiki
         """
 
+        def snake_to_camel(filename: str) -> str:
+            return re.sub('(?!^)([A-Z]+)', r'_\1', filename).lower()
+
+        existing_files = set()
+        if mathlib4:
+            mathlib4 = mathlib4 / "Mathlib"
+            existing_files = {str.join(".",
+                map(snake_to_camel, leanfile.relative_to(mathlib4).with_suffix("").parts)).lower()
+                for leanfile in mathlib4.rglob("*") if leanfile.suffix == ".lean"}
 
         port_status = PortStatus.deserialize_old(PortStatus.old_yaml())
 
@@ -1044,8 +1053,10 @@ class LeanProject:
             if degree > 0 or target_node["status"].comments:
                 continue
             target_node["status"].comments = "ready"
-        for _, node in self.import_graph.nodes(data=True):
+        for node_name, node in self.import_graph.nodes(data=True):
             if not node.get("status"):
                 continue
             node["style"] = "filled"
             node["fillcolor"] = node["status"].color()
+            if node_name in existing_files:
+                node["color"] = "red"
