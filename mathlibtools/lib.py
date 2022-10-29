@@ -21,7 +21,8 @@ import shutil
 
 import requests
 from tqdm import tqdm # type: ignore
-import toml
+import tomli
+import tomli_w
 import yaml
 from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
                  GitCommandError, BadName, RemoteReference) # type: ignore
@@ -84,7 +85,7 @@ def mathlib_lean_version() -> VersionTuple:
     """Return the latest Lean release supported by mathlib"""
     resp = requests.get("https://raw.githubusercontent.com/leanprover-community/mathlib/master/leanpkg.toml")
     assert resp.status_code == 200
-    conf = toml.loads(resp.text)
+    conf = tomli.loads(resp.text)
     return parse_version(conf['package']['lean_version'])
 
 def set_download_url(url: str = AZURE_URL) -> None:
@@ -441,7 +442,8 @@ class LeanProject:
             except ValueError:
                 rev = ''
         directory = find_root(path)
-        config = toml.load(directory/'leanpkg.toml')
+        with (directory/'leanpkg.toml').open('rb') as pkgtoml:
+            config = tomli.load(pkgtoml)
 
         return cls(repo, is_dirty, rev, directory,
                    config['package'], config['dependencies'],
@@ -456,7 +458,8 @@ class LeanProject:
         version of Lean supported by mathlib."""
         directory = Path.home()/'.lean'
         try:
-            config = toml.load(directory/'leanpkg.toml')
+            with (directory/'leanpkg.toml').open('rb') as pkgtoml:
+                config = tomli.load(pkgtoml)
         except FileNotFoundError:
             directory.mkdir(exist_ok=True)
             version = mathlib_lean_version()
@@ -469,8 +472,8 @@ class LeanProject:
             pkg = { 'name': '_user_local_packages',
                     'version': '1',
                     'lean_version': version_str }
-            with (directory/'leanpkg.toml').open('w') as pkgtoml:
-                toml.dump({'package': pkg}, pkgtoml)
+            with (directory/'leanpkg.toml').open('wb') as pkgtoml:
+                tomli_w.dump({'package': pkg}, pkgtoml)
             config = { 'package': pkg, 'dependencies': dict() }
 
         return cls(None, False, '', directory,
@@ -534,7 +537,8 @@ class LeanProject:
 
     def read_config(self) -> None:
         try:
-            config = toml.load(self.directory/'leanpkg.toml')
+            with (self.directory/'leanpkg.toml').open('rb') as pkgtoml:
+                config = tomli.load(pkgtoml)
         except FileNotFoundError:
             raise InvalidLeanProject('Missing leanpkg.toml')
 
@@ -551,7 +555,7 @@ class LeanProject:
         # for dependencies.
         with (self.directory/'leanpkg.toml').open('w') as cfg:
             cfg.write('[package]\n')
-            cfg.write(toml.dumps(self.pkg_config))
+            cfg.write(tomli_w.dumps(self.pkg_config))
             cfg.write('\n[dependencies]\n')
             for dep, val in self.deps.items():
                 nval = str(val).replace("'git':", 'git =').replace(
