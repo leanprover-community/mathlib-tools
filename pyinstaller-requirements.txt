@@ -21,7 +21,8 @@ pywin32-ctypes==0.2.0
 PyYAML==5.4.1
 requests==2.25.1
 smmap==3.0.5
-toml==0.10.2
+tomli==2.0.1
+tomli-w==1.0.0
 tqdm==4.59.0
 urllib3==1.26.5
 wrapt==1.12.1
