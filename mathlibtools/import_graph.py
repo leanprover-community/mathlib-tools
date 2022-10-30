@@ -79,3 +79,9 @@ class ImportGraph(nx.DiGraph):
         H = self.subgraph([n for n in self.nodes if not str.startswith(n, ('tactic.', 'meta.'))])
         H.base_path = self.base_path
         return H
+
+    def transitive_reduction(self) -> 'ImportGraph':
+        """Removes all imports that are in the transitive closure of other imports."""
+        H = self.edge_subgraph(nx.transitive_reduction(self).edges())
+        H.base_path = self.base_path
+        return H
