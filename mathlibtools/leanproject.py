@@ -304,6 +304,8 @@ def global_upgrade() -> None:
               help='URL of yaml with mathlib4 port status')
 @click.option('--mathlib4', default=None,
               help='Local directory of mathlib4 repo')
+@click.option('--reduce', 'reduce', default=False, is_flag=True,
+              help='Omit transitive imports.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
@@ -312,6 +314,7 @@ def import_graph(
     port_status: bool,
     port_status_url: Optional[str],
     mathlib4: Optional[str],
+    reduce: bool,
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -338,6 +341,8 @@ def import_graph(
         G = graph.descendants(from_)
     else:
         G = graph
+    if reduce:
+        G = G.transitive_reduction()
     G.write(Path(output))
 
 
