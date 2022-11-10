@@ -860,7 +860,11 @@ class LeanProject:
         for path in self.src_directory.glob('**/*.lean'):
             rel = path.relative_to(self.src_directory)
             label = str(rel.with_suffix('')).replace(os.sep, '.')
-            G.add_node(label)
+            if self.graph_include_deps:
+                # Colouring project gold to make it visible among deps.
+                G.add_node(label, style='filled', fillcolor='gold1')
+            else:
+                G.add_node(label)
             imports = self.run(['lean', '--deps', str(path)])
             for imp in map(Path, imports.split()):
                 try:
@@ -868,7 +872,7 @@ class LeanProject:
                 except ValueError:
                     # This import is not from the project
                     if self.graph_include_deps:
-                        if skip_dep(path):
+                        if skip_dep(imp):
                             continue
                         dependent_imps.add(imp.with_suffix('.lean'))
                         imp_label = str(imp.with_suffix('')).replace(os.sep, '.').split('src.')[-1]
@@ -901,7 +905,7 @@ class LeanProject:
                 traverse_deps(path)
 
             for node in dep_nodes:
-                G.add_node(node, color='silver')
+                G.add_node(node, color='lightslategrey')
             for edge in dep_edges:
                 G.add_edge(*edge)
 
