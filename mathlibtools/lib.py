@@ -420,6 +420,11 @@ class LeanProject:
         self.upgrade_lean = upgrade_lean
         self._import_graph = None # type: Optional[ImportGraph]
 
+        # Set these two flags accordingly before calling `self.import_graph` the first
+        # time if you want to include dependencies in the graph.
+        self.graph_include_deps = False
+        self.graph_exclude_tactics = False
+
     @classmethod
     def from_path(cls, path: Path, cache_url: str = '',
                   force_download: bool = False,
@@ -836,6 +841,21 @@ class LeanProject:
 
         if self._import_graph:
             return self._import_graph
+
+        dependent_imps = set()
+        dep_edges = set()
+        dep_nodes = set()
+
+        def skip_dep (path):
+            path = str(path)
+            # TODO: This is a hack...
+            if 'toolchains' in str(path):
+                return True
+            if self.graph_exclude_tactics:
+                if 'tactic' in path or 'meta' in path:
+                    return True
+            return False
+
         G = ImportGraph(self.directory)
         for path in self.src_directory.glob('**/*.lean'):
             rel = path.relative_to(self.src_directory)
@@ -847,9 +867,44 @@ class LeanProject:
                     imp_rel = imp.relative_to(self.src_directory.resolve())
                 except ValueError:
                     # This import is not from the project
-                    continue
-                imp_label = str(imp_rel.with_suffix('')).replace(os.sep, '.')
-                G.add_edge(imp_label, label)
+                    if self.graph_include_deps:
+                        if skip_dep(path):
+                            continue
+                        dependent_imps.add(imp.with_suffix('.lean'))
+                        imp_label = str(imp.with_suffix('')).replace(os.sep, '.').split('src.')[-1]
+                        dep_edges.add((imp_label, label))
+                else:
+                    imp_label = str(imp_rel.with_suffix('')).replace(os.sep, '.')
+                    G.add_edge(imp_label, label)
+
+        if self.graph_include_deps:
+            # Recursively travel down dependencies and add them to the graph.
+            def traverse_deps(path):
+                label = str(path.with_suffix('')).replace(os.sep, '.').split('src.')[-1]
+
+                if label in dep_nodes:
+                    return
+
+                dep_nodes.add(label)
+                imports = self.run(['lean', '--deps', str(path)])
+                for imp in map(Path, imports.split()):
+                    if skip_dep(imp):
+                        continue
+
+                    imp = imp.with_suffix('.lean')
+                    imp_label = str(imp.with_suffix('')).replace(os.sep, '.').split('src.')[-1]
+                    dep_edges.add((imp_label, label))
+
+                    traverse_deps(imp)
+
+            for path in dependent_imps:
+                traverse_deps(path)
+
+            for node in dep_nodes:
+                G.add_node(node, color='silver')
+            for edge in dep_edges:
+                G.add_edge(*edge)
+
         self._import_graph = G
         return G
 

@@ -298,6 +298,8 @@ def global_upgrade() -> None:
               help='Return only imports starting from this file.')
 @click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
               help='Excludes tactics and meta.')
+@click.option('--include-deps', 'include_deps', default=False, is_flag=True,
+              help='Include imports from outside the project.')
 @click.option('--port-status', default=False, is_flag=True,
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,
@@ -309,6 +311,7 @@ def import_graph(
     to: Optional[str],
     from_: Optional[str],
     exclude : bool,
+    include_deps : bool,
     port_status: bool,
     port_status_url: Optional[str],
     reduce: bool,
@@ -324,6 +327,11 @@ def import_graph(
     For .dot, .pdf, .svg, or .png output you will need to install 'graphviz' first.
     """
     project = proj()
+
+    if include_deps:
+        project.graph_include_deps = include_deps
+        project.graph_exclude_tactics = exclude
+
     graph = project.import_graph
     if exclude:
         graph = graph.exclude_tactics()
