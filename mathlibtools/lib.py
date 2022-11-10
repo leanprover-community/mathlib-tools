@@ -1044,9 +1044,11 @@ class LeanProject:
                 # we don't need to redo a finished node
                 if target in finished_nodes:
                     continue
+                target_node = self.import_graph.nodes[target]
+                if target_node.get("status"):
+                    continue
                 parents = {parent for parent, _ in self.import_graph.in_edges(target)}
                 if parents.issubset(finished_nodes):
-                    target_node = self.import_graph.nodes[target]
                     target_node["status"] = FileStatus.ready()
         # now to get root nodes
         for target, degree in self.import_graph.in_degree():
