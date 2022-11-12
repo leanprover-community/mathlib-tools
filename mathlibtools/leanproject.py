@@ -345,18 +345,25 @@ def import_graph(
 
 @cli.command()
 def port_progress() -> None:
-    """"""
+    """Print progress report for the Lean 4 port."""
     project = proj()
     project.port_status()
     graph = project.import_graph
     graph = graph.exclude_tactics()
     graph = graph.transitive_reduction()
-    print("Total files in mathlib:            " + str(graph.size()))
-    print("Longest import chaib in mathlib:   " + str(graph.longest_path_length()))
+    nb_files = graph.size()
+    nb_lines = sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
+    print(f"Total files in mathlib:            {nb_files}")
+    print(f"Longest import chain in mathlib:   {graph.longest_path_length()}")
     graph = graph.delete_ported()
-    print("Unported files in mathlib:         " + str(graph.size()))
-    print("Longest unported chain in mathlib: " + str(graph.longest_path_length()))
-    print(str(graph.longest_path()))
+    nb_ported_files = nb_files - graph.size()
+    proportion_files = round(nb_ported_files/nb_files*100, 1)
+    nb_ported_lines = nb_lines - sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
+    proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
+    print(f"Ported files in mathlib:           {nb_ported_files} ({proportion_files}% of total)")
+    print(f"Ported lines in mathlib:           {nb_ported_lines} ({proportion_lines}% of total)")
+    print(f"Longest unported chain in mathlib: {graph.longest_path_length()}")
+    print(graph.longest_path())
 
 
 @cli.command()
