@@ -297,7 +297,7 @@ def global_upgrade() -> None:
 @click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
 @click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
-              help='Excludes tactics and meta besides tactic.basic, adding edges for transitive dependencies.')
+              help='Excludes tactics and meta, adding edges for transitive dependencies.')
 @click.option('--port-status', default=False, is_flag=True,
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,

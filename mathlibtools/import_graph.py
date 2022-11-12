@@ -76,9 +76,10 @@ class ImportGraph(nx.DiGraph):
 
     def exclude_tactics(self) -> 'ImportGraph':
         """Removes all files in src/tactic/ and src/meta/ from the graph,
-        except src/tactic/basic.lean (but adds extra edges to reflect transitive dependencies)."""
+        except tactic.basic and tactic.core (but adds extra edges to reflect transitive dependencies)."""
         H = self
-        to_delete = [n for n in H.nodes if n != 'tactic.basic' and str.startswith(n, ('tactic.', 'meta.'))]
+        to_delete = [n for n in H.nodes if
+            n != 'tactic.basic' and n != 'tactic.core' and str.startswith(n, ('tactic.', 'meta.'))]
         for n in to_delete:
             parents = [k for (k, _) in H.in_edges([n])]
             children = [m for (_, m) in H.out_edges([n])]
