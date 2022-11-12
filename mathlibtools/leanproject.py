@@ -344,6 +344,22 @@ def import_graph(
 
 
 @cli.command()
+def port_progress() -> None:
+    """"""
+    project = proj()
+    project.port_status()
+    graph = project.import_graph
+    graph = graph.exclude_tactics()
+    graph = graph.transitive_reduction()
+    print("Total files in mathlib:            " + str(graph.size()))
+    print("Longest import chaib in mathlib:   " + str(graph.longest_path_length()))
+    graph = graph.delete_ported()
+    print("Unported files in mathlib:         " + str(graph.size()))
+    print("Longest unported chain in mathlib: " + str(graph.longest_path_length()))
+    print(str(graph.longest_path()))
+
+
+@cli.command()
 @click.option('--sed', 'sed', default=False, is_flag=True,
               help='Instead of printing a list of removable imports, print a sed script that can be run to remove the imports.')
 @click.argument('file', default=None, required=False)

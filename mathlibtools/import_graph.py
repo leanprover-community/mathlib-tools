@@ -3,6 +3,8 @@ from typing import Optional
 import tempfile
 import subprocess
 
+from mathlibtools.file_status import FileStatus
+
 import networkx as nx # type: ignore
 
 class ImportGraph(nx.DiGraph):
@@ -95,3 +97,19 @@ class ImportGraph(nx.DiGraph):
         H = self.edge_subgraph(nx.transitive_reduction(self).edges())
         H.base_path = self.base_path
         return H
+
+    def delete_ported(self) -> 'ImportGraph':
+        """Delete all nodes marked as ported during port_status"""
+        H = self.subgraph({node for node, attrs in self.nodes(data=True)
+                          if attrs.get("status") != FileStatus.yes()})
+        H.base_path = self.base_path
+        return H
+
+    def size(self) -> 'int':
+        return nx.number_of_nodes(self)
+
+    def longest_path_length(self) -> 'int':
+        return nx.dag_longest_path_length(self)
+
+    def longest_path(self):
+        return nx.dag_longest_path(self)
