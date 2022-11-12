@@ -134,6 +134,13 @@ def escape_identifier(s : str) -> str:
         return s
     return "«" + s + "»"
 
+def blocks(files, size=65536):
+    """Help function to count file lines"""
+    while True:
+        b = files.read(size)
+        if not b: break
+        yield b
+
 class OleanCache:
     """ A reference to a cache of oleans for a single commit.
 
@@ -1030,6 +1037,9 @@ class LeanProject:
             if filename not in self.import_graph.nodes:
                 continue
             node = self.import_graph.nodes[filename]
+            node_path = self.src_directory.joinpath(*filename.split(".")).with_suffix(".lean")
+            with open(node_path, "r",encoding="utf-8",errors='ignore') as f:
+                node["nb_lines"] = sum(bl.count("\n") for bl in blocks(f))
             node["status"] = FileStatus.assign(status)
         # somehow missing from yaml
         # for node_name, node in self.import_graph.nodes(data=True):
