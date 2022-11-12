@@ -1047,7 +1047,7 @@ class LeanProject:
                 parents = {parent for parent, _ in self.import_graph.in_edges(target)}
                 if parents.issubset(finished_nodes):
                     target_node = self.import_graph.nodes[target]
-                    if target_node["status"] not in [FileStatus.wip(), FileStatus.pr()]:
+                    if not target_node.get("status"):
                         target_node["status"] = FileStatus.ready()
         # now to get root nodes
         for target, degree in self.import_graph.in_degree():
