@@ -1,5 +1,9 @@
 # Change log
 
+## 1.3.0 (2022-11-13)
+
+* Add `port-status` command
+
 ## 1.2.0 (2022-10-23)
 
 * import-graph: allow to write raw dot file to ".rawdot" without layout
