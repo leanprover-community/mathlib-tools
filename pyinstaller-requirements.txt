@@ -12,7 +12,7 @@ idna==2.10
 networkx==2.8.7
 pefile==2022.5.30
 pydot==1.4.2
-PyGithub==1.54.1
+PyGithub==1.57
 pyinstaller==5.5
 pyinstaller-hooks-contrib==2022.10
 PyJWT==2.4.0
