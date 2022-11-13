@@ -1070,3 +1070,18 @@ class LeanProject:
                 continue
             node["style"] = "filled"
             node["fillcolor"] = node["status"].color
+
+    def modules_used(self, module: str) -> List[str]:
+        """
+        A wrapper around the 'scripts/modules_used.lean' script in the mathlib repository.
+        """
+        self.make_all()
+        return self.run(["lean", "--run", "scripts/modules_used.lean", module]).split()
+
+    def show_unused(self, to: str) -> None:
+        """Highlight any files which are not needed by the file 'to'."""
+        used = self.modules_used(to)
+        print(used)
+        for label, node in self.import_graph.nodes(data=True):
+            if not label in used:
+                node["color"] = "red"

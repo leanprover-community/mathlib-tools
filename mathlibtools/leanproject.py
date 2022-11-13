@@ -304,6 +304,8 @@ def global_upgrade() -> None:
               help='URL of yaml with mathlib4 port status')
 @click.option('--reduce', 'reduce', default=False, is_flag=True,
               help='Omit transitive imports.')
+@click.option('--show-unused', 'unused', default=False, is_flag=True,
+              help='Show files which are not used by any declaration in the --to target.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
@@ -312,6 +314,7 @@ def import_graph(
     port_status: bool,
     port_status_url: Optional[str],
     reduce: bool,
+    unused: bool,
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -330,6 +333,8 @@ def import_graph(
         project._import_graph = graph
     if port_status or port_status_url:
         project.port_status(port_status_url)
+    if unused and to:
+        project.show_unused(to)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:
