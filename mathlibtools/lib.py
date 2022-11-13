@@ -1083,5 +1083,5 @@ class LeanProject:
         used = self.modules_used(to)
         print(used)
         for label, node in self.import_graph.nodes(data=True):
-            if not label in used:
+            if not (label.startswith("tactic.") or label.startswith("meta.") or label in used):
                 node["color"] = "red"
