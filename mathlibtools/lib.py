@@ -1081,7 +1081,6 @@ class LeanProject:
     def show_unused(self, to: str) -> None:
         """Highlight any files which are not needed by the file 'to'."""
         used = self.modules_used(to)
-        print(used)
         for label, node in self.import_graph.nodes(data=True):
             if not (label.startswith("tactic.") or label.startswith("meta.") or label in used):
-                node["color"] = "red"
+                node["text color"] = "grey"
