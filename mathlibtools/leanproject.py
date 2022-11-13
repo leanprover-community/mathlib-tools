@@ -297,7 +297,7 @@ def global_upgrade() -> None:
 @click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
 @click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
-              help='Excludes tactics and meta.')
+              help='Excludes tactics and meta, adding edges for transitive dependencies.')
 @click.option('--port-status', default=False, is_flag=True,
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,
@@ -341,9 +341,32 @@ def import_graph(
         G = graph.descendants(from_)
     else:
         G = graph
-    if reduce:
+    if reduce or exclude:
         G = G.transitive_reduction()
     G.write(Path(output))
+
+
+@cli.command()
+def port_progress() -> None:
+    """Print progress report for the Lean 4 port."""
+    project = proj()
+    project.port_status()
+    graph = project.import_graph
+    graph = graph.exclude_tactics()
+    graph = graph.transitive_reduction()
+    nb_files = graph.size()
+    nb_lines = sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
+    print(f"Total files in mathlib:            {nb_files}")
+    print(f"Longest import chain in mathlib:   {graph.longest_path_length()}")
+    graph = graph.delete_ported()
+    nb_ported_files = nb_files - graph.size()
+    proportion_files = round(nb_ported_files/nb_files*100, 1)
+    nb_ported_lines = nb_lines - sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
+    proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
+    print(f"Ported files in mathlib:           {nb_ported_files} ({proportion_files}% of total)")
+    print(f"Ported lines in mathlib:           {nb_ported_lines} ({proportion_lines}% of total)")
+    print(f"Longest unported chain in mathlib: {graph.longest_path_length()}")
+    print(graph.longest_path())
 
 
 @cli.command()

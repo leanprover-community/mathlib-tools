@@ -134,6 +134,13 @@ def escape_identifier(s : str) -> str:
         return s
     return "«" + s + "»"
 
+def blocks(files, size=65536):
+    """Help function to count file lines"""
+    while True:
+        b = files.read(size)
+        if not b: break
+        yield b
+
 class OleanCache:
     """ A reference to a cache of oleans for a single commit.
 
@@ -1034,6 +1041,13 @@ class LeanProject:
 
         for node_name, node in self.import_graph.nodes(data=True):
             node["status"] = port_status.file_statuses.get(node_name, FileStatus())
+            node_path = self.src_directory.joinpath(*node_name.split(".")).with_suffix(".lean")
+            with open(node_path, "r",encoding="utf-8",errors='ignore') as f:
+                node["nb_lines"] = sum(bl.count("\n") for bl in blocks(f))
+        # somehow missing from yaml
+        # for node_name, node in self.import_graph.nodes(data=True):
+        #     if node_name not in port_labels:
+        #         node["status"] = FileStatus.missing()
         finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
                           if attrs.get("status").ported}
         # tag nodes that have finished parents, depth of 1
