@@ -101,7 +101,7 @@ class ImportGraph(nx.DiGraph):
     def delete_ported(self) -> 'ImportGraph':
         """Delete all nodes marked as ported during port_status"""
         H = self.subgraph({node for node, attrs in self.nodes(data=True)
-                          if attrs.get("status") != FileStatus.yes()})
+                          if attrs.get("status") and attrs.get("status").ported})
         H.base_path = self.base_path
         return H
 
