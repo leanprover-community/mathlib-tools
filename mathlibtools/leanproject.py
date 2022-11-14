@@ -331,10 +331,10 @@ def import_graph(
     if exclude:
         graph = graph.exclude_tactics()
         project._import_graph = graph
-    if port_status or port_status_url:
-        project.port_status(port_status_url)
     if unused and to:
         project.show_unused(to)
+    if port_status or port_status_url:
+        project.port_status(port_status_url)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:

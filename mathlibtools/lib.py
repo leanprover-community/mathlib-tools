@@ -1083,4 +1083,5 @@ class LeanProject:
         used = self.modules_used(to)
         for label, node in self.import_graph.nodes(data=True):
             if not (label.startswith("tactic.") or label.startswith("meta.") or label in used):
-                node["text color"] = "grey"
+                node["style"] = "filled"
+                node["fillcolor"] = "#EEEEEE"
