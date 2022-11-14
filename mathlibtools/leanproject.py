@@ -381,7 +381,7 @@ def port_progress(to: Optional[str]) -> None:
     print(f"| {'':-<{W                             }} | ----------------- | ---------------- |")
     print(f"| {'Ported files:':<{W                 }} | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
     print(f"| {'Ported lines:':<{W                 }} | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
-    print(f"| {'Longest unported chain:':<{W}} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
+    print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
     print(graph.longest_path())
 
