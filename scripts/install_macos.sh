@@ -10,6 +10,7 @@ else
     brew update
 fi
 
+brew install --force python@3.11
 brew link --overwrite python@3.11
 brew install elan mathlibtools
 elan toolchain install stable
