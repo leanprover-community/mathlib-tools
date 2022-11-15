@@ -392,6 +392,10 @@ def port_progress(to: Optional[str]) -> None:
 
     used = project.modules_used(to)
 
+    print("# Longest unported import chain up to " + to)
+    print("# This can be generated using `leanproject port-progress --to " + to)
+    print("# Files prefixed with '-' are apparently not required in " + to)
+
     for n in path:
         if n in used:
             print("  " + n)
