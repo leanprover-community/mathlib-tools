@@ -10,6 +10,7 @@ else
     brew update
 fi
 
+brew upgrade
 brew install elan mathlibtools
 elan toolchain install stable
 elan default stable
