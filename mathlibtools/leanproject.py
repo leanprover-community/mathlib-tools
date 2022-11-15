@@ -383,7 +383,25 @@ def port_progress(to: Optional[str]) -> None:
     print(f"| {'Ported lines:':<{W                 }} | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
     print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
-    print(graph.longest_path())
+
+    path = graph.longest_path()
+    if path[-1] == "all":
+        path = path[:-1]
+    if not to:
+        to = path[-1]
+
+    used = project.modules_used(to)
+
+    print("# Longest unported import chain up to " + to)
+    print("# This can be generated using `leanproject port-progress --to " + to + "`.")
+    print("# Files prefixed with '-' are apparently not required.")
+    print()
+
+    for n in path:
+        if n in used:
+            print("  " + n)
+        else:
+            print("- " + n)
 
 
 @cli.command()
