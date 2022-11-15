@@ -344,25 +344,40 @@ def import_graph(
 
 
 @cli.command()
-def port_progress() -> None:
+@click.option('--to', 'to', default=None,
+              help='Report progress up to this file.')
+def port_progress(to: Optional[str]) -> None:
     """Print progress report for the Lean 4 port."""
     project = proj()
     project.port_status()
     graph = project.import_graph
     graph = graph.exclude_tactics()
+    if to:
+        graph = graph.ancestors(to)
     graph = graph.transitive_reduction()
     nb_files = graph.size()
     nb_lines = sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
-    print(f"Total files in mathlib:            {nb_files}")
-    print(f"Longest import chain in mathlib:   {graph.longest_path_length()}")
+    mathlib3_longest_path = graph.longest_path_length()
     graph = graph.delete_ported()
     nb_ported_files = nb_files - graph.size()
     proportion_files = round(nb_ported_files/nb_files*100, 1)
     nb_ported_lines = nb_lines - sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
     proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
-    print(f"Ported files in mathlib:           {nb_ported_files} ({proportion_files}% of total)")
-    print(f"Ported lines in mathlib:           {nb_ported_lines} ({proportion_lines}% of total)")
-    print(f"Longest unported chain in mathlib: {graph.longest_path_length()}")
+    longest_unported_path = graph.longest_path_length()
+    progress_path = round(100 - longest_unported_path / mathlib3_longest_path * 100, 1)
+
+    if to:
+        header = "mathlib port progress ({})".format(to)
+    else:
+        header = "mathlib port progress"
+    W = max(23, len(header))
+
+    print(f"| {header:<{W                          }} |                   |                  |")
+    print(f"| {'':-<{W                             }} | ----------------- | ---------------- |")
+    print(f"| {'Ported files:':<{W                 }} | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
+    print(f"| {'Ported lines:':<{W                 }} | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
+    print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
+    print()
     print(graph.longest_path())
 
 
