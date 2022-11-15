@@ -10,6 +10,10 @@ else
     brew update
 fi
 
+# workaround to fix broke MacOS testing
+# hack for underlying  actions/runner-images issue #6459
+brew install --overwrite python@3.10 python@3.11
+
 brew install elan mathlibtools
 elan toolchain install stable
 elan default stable
