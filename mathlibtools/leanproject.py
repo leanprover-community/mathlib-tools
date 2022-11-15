@@ -371,29 +371,22 @@ def port_progress(to: Optional[str]) -> None:
     longest_unported_path = graph.longest_path_length()
     progress_path = round(100 - longest_unported_path / mathlib3_longest_path * 100, 1)
 
-    if to:
-        header = "mathlib port progress ({})".format(to)
-    else:
-        header = "mathlib port progress"
-    W = max(23, len(header))
-
-    print(f"| {header:<{W                          }} |                   |                  |")
-    print(f"| {'':-<{W                             }} | ----------------- | ---------------- |")
-    print(f"| {'Ported files:':<{W                 }} | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
-    print(f"| {'Ported lines:':<{W                 }} | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
-    print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
+    print(f"| mathlib port progress   | {to:<17} |                 |")
+    print(f"| ----------------------- | ----------------- | --------------- |")
+    print(f"| Ported files:           | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
+    print(f"| Ported lines:           | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
+    print(f"| Longest unported chain: | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
     path = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
-    if not to:
-        to = path[-1]
+    end = path[-1]
 
-    used = project.modules_used(to)
+    used = project.modules_used(end)
 
-    print("# Longest unported import chain up to " + to)
-    print("# This can be generated using `leanproject port-progress --to " + to + "`.")
+    print("# Longest unported import chain up to " + end)
+    print("# This can be generated using `leanproject port-progress --to " + end + "`.")
     print("# Files prefixed with '-' are apparently not required.")
     print()
 
