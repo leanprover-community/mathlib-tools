@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Set
+from typing import List, Optional, Set, Union
 
 @dataclass(frozen=True)
 class FileStatus:
@@ -51,3 +51,6 @@ class FileStatus:
     if cls.no().matches(comment) and len(comment) > 2:
       return cls.no()
     return None
+
+  def to_gexf(self) -> str:
+    return repr(self)
