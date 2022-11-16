@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 from getpass import getpass
 
 from git.exc import GitCommandError # type: ignore
@@ -384,7 +384,7 @@ def port_progress(to: Optional[str]) -> None:
     print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
-    path = graph.longest_path()
+    path: List[str] = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
     if not to:
