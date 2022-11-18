@@ -59,7 +59,9 @@ class PortStatus:
         return yaml_md_load(requests.get(url).content)
 
     @classmethod
-    def deserialize_old(cls, yaml: Dict[str, str]) -> "PortStatus":
+    def deserialize_old(cls, yaml: Optional[Dict[str, str]] = None) -> "PortStatus":
+        if yaml is None:
+            yaml = cls.old_yaml()
         return cls(file_statuses={k: FileStatus.parse_old(v) for k, v in yaml.items()})
 
     def serialize(self) -> Dict[str, Dict[str, Union[int, str, None]]]:

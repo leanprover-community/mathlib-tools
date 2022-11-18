@@ -1037,7 +1037,7 @@ class LeanProject:
                 map(snake_to_camel, leanfile.relative_to(mathlib4).with_suffix("").parts)).lower()
                 for leanfile in mathlib4.rglob("*") if leanfile.suffix == ".lean"}
 
-        port_status = PortStatus.deserialize_old(PortStatus.old_yaml())
+        port_status = PortStatus.deserialize_old()
 
         for node_name, node in self.import_graph.nodes(data=True):
             node["status"] = port_status.file_statuses.get(node_name, FileStatus())
