@@ -34,14 +34,6 @@ class FileStatus:
     def asdict(self) -> Dict[str, Any]:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
-    def color(self) -> Optional[str]:
-        if self.ported:
-            return "green"
-        if self.mathlib4_pr:
-            return "lightskyblue"
-        if self.comments and "ready" in self.comments:
-            return "turquoise1"
-        return None
 
 
 @dataclass

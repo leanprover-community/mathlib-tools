@@ -1071,9 +1071,22 @@ class LeanProject:
             if not node.get("status"):
                 continue
             node["style"] = "filled"
-            node["fillcolor"] = node["status"].color()
+            node["fillcolor"] = self.status_color(node["status"])
             if node_name in existing_files:
                 node["color"] = "red"
+
+    @staticmethod
+    def status_color(status: FileStatus) -> Optional[str]:
+        """
+        How each status should be colored, should be applied to the node attrs at "fillcolor".
+        """
+        if status.ported:
+            return "green"
+        if status.mathlib4_pr:
+            return "lightskyblue"
+        if status.comments and "ready" in status.comments:
+            return "turquoise1"
+        return None
 
     def modules_used(self, module: str) -> List[str]:
         """
