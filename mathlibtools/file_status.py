@@ -1,53 +1,60 @@
-from dataclasses import dataclass, field
-from typing import Optional, Set
+import re
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, Optional, Union
 
-@dataclass(frozen=True)
+import requests
+import yaml
+
+
+@dataclass()
 class FileStatus:
-  """Capture the file status descriptions in the wiki yaml.
 
-  `string_match` are the substrings that must be found, lowercase match
-  `color` is how the node should be colored if it has the status
-  """
+    ported: bool = False
+    mathlib4_pr: Optional[int] = None
+    mathlib3_hash: Optional[str] = None
+    comments: Optional[str] = None
 
-  color: str
-  prefix: Optional[str] = None
-  string_match: Set[str] = field(default_factory=set)
-  # colors from X11
+    @classmethod
+    def parse_old(cls, message: str) -> "FileStatus":
+        ported = False
+        mathlib4_pr: Optional[int] = None
+        mathlib3_hash: Optional[str] = None
+        if message.startswith("Yes"):
+            ported = True
+            if len(message.split()) > 2:
+                mathlib3_hash = message.split()[2]
+        if "mathlib4#" in message:
+            mathlib4_pr = int(re.findall(r"[0-9]+", message.replace("mathlib4#", ""))[0])
+        return cls(
+            ported=ported,
+            mathlib4_pr=mathlib4_pr,
+            mathlib3_hash=mathlib3_hash,
+        )
 
-  @classmethod
-  def yes(cls) -> "FileStatus":
-    return cls("green", "Yes")
+    def asdict(self) -> Dict[str, Any]:
+        return {k: v for k, v in asdict(self).items() if v is not None}
 
-  @classmethod
-  def pr(cls) -> "FileStatus":
-    return cls("lightskyblue", "No", {"pr"})
 
-  @classmethod
-  def wip(cls) -> "FileStatus":
-    return cls("lightskyblue", "No", {"wip"})
 
-  @classmethod
-  def no(cls) -> "FileStatus":
-    return cls("orange", "No")
+@dataclass
+class PortStatus:
 
-  # @classmethod
-  # def missing(cls) -> "FileStatus":
-  #   return cls("orchid1")
+    file_statuses: Dict[str, FileStatus]
 
-  @classmethod
-  def ready(cls) -> "FileStatus":
-    return cls("turquoise1")
+    @classmethod
+    def old_yaml(cls, url: Optional[str] = None) -> Dict[str, str]:
+        if url is None:
+            url = "https://raw.githubusercontent.com/wiki/leanprover-community/mathlib/mathlib4-port-status.md"
+        def yaml_md_load(wikicontent: bytes):
+            return yaml.safe_load(wikicontent.replace(b"```", b""))
 
-  def matches(self, comment: str) -> bool:
-    return (self.prefix is None or comment.startswith(self.prefix)) and \
-        all(substring.lower() in comment.lower() for substring in self.string_match)
+        return yaml_md_load(requests.get(url).content)
 
-  @classmethod
-  def assign(cls, comment: str) -> Optional["FileStatus"]:
-    for status in [cls.yes(), cls.pr(), cls.wip()]:
-      if status.matches(comment):
-        return status
-    # "No" but other comments
-    if cls.no().matches(comment) and len(comment) > 2:
-      return cls.no()
-    return None
+    @classmethod
+    def deserialize_old(cls, yaml: Optional[Dict[str, str]] = None) -> "PortStatus":
+        if yaml is None:
+            yaml = cls.old_yaml()
+        return cls(file_statuses={k: FileStatus.parse_old(v) for k, v in yaml.items()})
+
+    def serialize(self) -> Dict[str, Dict[str, Union[int, str, None]]]:
+        return yaml.dump({k: v.asdict() for k, v in self.file_statuses.items()})

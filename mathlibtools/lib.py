@@ -27,7 +27,7 @@ from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
                  GitCommandError, BadName, RemoteReference) # type: ignore
 from atomicwrites import atomic_write
 
-from mathlibtools.file_status import FileStatus
+from mathlibtools.file_status import FileStatus, PortStatus
 
 if TYPE_CHECKING:
     from mathlibtools.import_graph import ImportGraph
@@ -1019,34 +1019,37 @@ class LeanProject:
                 self.run_echo(['leanpkg', 'configure'])
             self.get_mathlib_olean()
 
-    def port_status(self, url: Optional[str] = None) -> None:
+    def port_status(self, url: Optional[str] = None, mathlib4: Optional[Path] = None) -> None:
         """
         Color nodes on the graph based on port status. Done in place to the graph nodes.
 
         Args:
             url: md or yaml file with "file: label" content, by default, from the wiki
         """
-        if url is None:
-            url = 'https://raw.githubusercontent.com/wiki/leanprover-community/mathlib/mathlib4-port-status.md'
-        def yaml_md_load(wikicontent: bytes):
-            return yaml.safe_load(wikicontent.replace(b"```", b""))
 
-        port_labels: Dict[str, str] = yaml_md_load(requests.get(url).content)
+        def snake_to_camel(filename: str) -> str:
+            return re.sub('(?!^)([A-Z]+)', r'_\1', filename).lower()
 
-        for filename, status in port_labels.items():
-            if filename not in self.import_graph.nodes:
-                continue
-            node = self.import_graph.nodes[filename]
-            node_path = self.src_directory.joinpath(*filename.split(".")).with_suffix(".lean")
+        existing_files = set()
+        if mathlib4:
+            mathlib4 = mathlib4 / "Mathlib"
+            existing_files = {str.join(".",
+                map(snake_to_camel, leanfile.relative_to(mathlib4).with_suffix("").parts)).lower()
+                for leanfile in mathlib4.rglob("*") if leanfile.suffix == ".lean"}
+
+        port_status = PortStatus.deserialize_old()
+
+        for node_name, node in self.import_graph.nodes(data=True):
+            node["status"] = port_status.file_statuses.get(node_name, FileStatus())
+            node_path = self.src_directory.joinpath(*node_name.split(".")).with_suffix(".lean")
             with open(node_path, "r",encoding="utf-8",errors='ignore') as f:
                 node["nb_lines"] = sum(bl.count("\n") for bl in blocks(f))
-            node["status"] = FileStatus.assign(status)
         # somehow missing from yaml
         # for node_name, node in self.import_graph.nodes(data=True):
         #     if node_name not in port_labels:
         #         node["status"] = FileStatus.missing()
         finished_nodes = {node for node, attrs in self.import_graph.nodes(data=True)
-                          if attrs.get("status") == FileStatus.yes()}
+                          if attrs.get("status").ported}
         # tag nodes that have finished parents, depth of 1
         for node in finished_nodes:
             # does not get root nodes because they are not at end of an out_edge
@@ -1057,19 +1060,33 @@ class LeanProject:
                 parents = {parent for parent, _ in self.import_graph.in_edges(target)}
                 if parents.issubset(finished_nodes):
                     target_node = self.import_graph.nodes[target]
-                    if not target_node.get("status"):
-                        target_node["status"] = FileStatus.ready()
+                    target_node["status"].comments = "ready"
         # now to get root nodes
         for target, degree in self.import_graph.in_degree():
             target_node = self.import_graph.nodes[target]
-            if degree > 0 or target_node.get("status"):
+            if degree > 0 or target_node["status"].comments:
                 continue
-            target_node["status"] = FileStatus.ready()
-        for _, node in self.import_graph.nodes(data=True):
+            target_node["status"].comments = "ready"
+        for node_name, node in self.import_graph.nodes(data=True):
             if not node.get("status"):
                 continue
             node["style"] = "filled"
-            node["fillcolor"] = node["status"].color
+            node["fillcolor"] = self.status_color(node["status"])
+            if node_name in existing_files:
+                node["color"] = "red"
+
+    @staticmethod
+    def status_color(status: FileStatus) -> Optional[str]:
+        """
+        How each status should be colored, should be applied to the node attrs at "fillcolor".
+        """
+        if status.ported:
+            return "green"
+        if status.mathlib4_pr:
+            return "lightskyblue"
+        if status.comments and "ready" in status.comments:
+            return "turquoise1"
+        return None
 
     def modules_used(self, module: str) -> List[str]:
         """

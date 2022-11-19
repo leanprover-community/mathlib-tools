@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 from getpass import getpass
 
 from git.exc import GitCommandError # type: ignore
@@ -302,6 +302,8 @@ def global_upgrade() -> None:
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,
               help='URL of yaml with mathlib4 port status')
+@click.option('--mathlib4', default=None,
+              help='Local directory of mathlib4 repo')
 @click.option('--reduce', 'reduce', default=False, is_flag=True,
               help='Omit transitive imports.')
 @click.option('--show-unused', 'unused', default=False, is_flag=True,
@@ -313,6 +315,7 @@ def import_graph(
     exclude : bool,
     port_status: bool,
     port_status_url: Optional[str],
+    mathlib4: Optional[str],
     reduce: bool,
     unused: bool,
     output: str
@@ -334,7 +337,7 @@ def import_graph(
     if unused and to:
         project.show_unused(to)
     if port_status or port_status_url:
-        project.port_status(port_status_url)
+        project.port_status(port_status_url, mathlib4=None if mathlib4 is None else Path(mathlib4))
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:
@@ -384,7 +387,7 @@ def port_progress(to: Optional[str]) -> None:
     print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
-    path = graph.longest_path()
+    path: List[str] = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
     if not to:
