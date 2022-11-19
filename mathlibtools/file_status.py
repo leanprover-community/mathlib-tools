@@ -19,16 +19,23 @@ class FileStatus:
         ported = False
         mathlib4_pr: Optional[int] = None
         mathlib3_hash: Optional[str] = None
+        comments = None
         if message.startswith("Yes"):
             ported = True
-            if len(message.split()) > 2:
-                mathlib3_hash = message.split()[2]
+            parts = message.split(None, 3)
+            if len(parts) > 2:
+                mathlib3_hash = parts[2]
+        elif message.startswith("No"):
+            comments = message[2:].lstrip(': ')
+        else:
+            comments = message.lstrip()
         if "mathlib4#" in message:
             mathlib4_pr = int(re.findall(r"[0-9]+", message.replace("mathlib4#", ""))[0])
         return cls(
             ported=ported,
             mathlib4_pr=mathlib4_pr,
             mathlib3_hash=mathlib3_hash,
+            comments=comments,
         )
 
     def asdict(self) -> Dict[str, Any]:
