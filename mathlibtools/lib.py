@@ -1014,7 +1014,7 @@ class LeanProject:
         shutil.copy(source_file, target_file)
         mathlib4_repo = Repo(mathlib4)
         reader = mathlib4_repo.config_reader()
-        username = reader.get_value("user", "email").split("@")[0]
+        username = str(reader.get_value("user", "email")).split("@")[0]
         branch_name = f"{username}/port-{filename.replace('.', '-')}"
         try:
             mathlib4_repo.git.checkout("-b", branch_name)
