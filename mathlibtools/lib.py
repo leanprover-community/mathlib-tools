@@ -1021,7 +1021,7 @@ class LeanProject:
         except GitCommandError:
             mathlib4_repo.git.checkout(branch_name)
         mathlib4_repo.git.add(target_file)
-        mathlib4_repo.index.commit("Initial file copy from mathport")
+        mathlib4_repo.index.commit(f"Initial file copy from mathport\n\nmathlib3 hash: {hash}")
         mathlib4_files = sorted((
             subp for subp in cls.walk_repo(mathlib4_repo.head.commit.tree)
             if len(subp.parents) > 2 and list(reversed(subp.parents))[1].name == "Mathlib"),
