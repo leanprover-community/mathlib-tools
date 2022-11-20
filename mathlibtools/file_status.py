@@ -34,6 +34,14 @@ class FileStatus:
     def asdict(self) -> Dict[str, Any]:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
+    @property
+    def pr_link(self) -> Optional[str]:
+        """
+        The github PR, as a site, associated with this file status.
+        """
+        if self.mathlib4_pr is None:
+            return None
+        return f"https://github.com/leanprover-community/mathlib4/pull/{self.mathlib4_pr}"
 
 
 @dataclass

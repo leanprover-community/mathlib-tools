@@ -1072,6 +1072,7 @@ class LeanProject:
                 continue
             node["style"] = "filled"
             node["fillcolor"] = self.status_color(node["status"])
+            node["href"] = node["status"].pr_link
             if node_name in existing_files:
                 node["color"] = "red"
 
