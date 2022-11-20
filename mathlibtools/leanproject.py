@@ -444,6 +444,17 @@ def decls(path: str = '') -> None:
             outfile.write('{}:\n  origin: {}\n  path: {}\n  line: {}\n'.format(
                 name, info.origin, info.filepath, info.line))
 
+@cli.command()
+@click.argument('filename', default='')
+@click.argument('mathlib4', default='')
+@click.argument('mathport', default='')
+def port(filename: str, mathlib4: str, mathport: str) -> None:
+    """
+    Assist in setting up a port branch and PR, tracking which file and hash is used.
+    """
+    LeanProject.port(filename, Path(mathlib4), Path(mathport))
+    return
+
 
 @cli.command()
 @click.argument('branch_name')

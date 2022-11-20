@@ -15,7 +15,7 @@ import enum
 from datetime import datetime
 import concurrent.futures
 import tarfile
-from typing import Iterable, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
+from typing import Iterable, Iterator, Union, List, Tuple, Optional, Dict, TYPE_CHECKING
 from tempfile import TemporaryDirectory
 import shutil
 
@@ -975,6 +975,72 @@ class LeanProject:
                                   f"refs/remotes/{origin}/{branch_name}")
         self.repo.head.reference.set_tracking_branch(rem_ref)
         log.info('Done.')
+
+    @classmethod
+    def walk_repo(cls, tree) -> Iterator[Path]:
+        """Iterate out all the .lean files for a given commit, in BFS order."""
+        for blob in tree.blobs:
+            path = Path(blob.path)
+            if path.suffix == ".lean":
+                yield path
+        for tree in tree.trees:
+            yield from cls.walk_repo(tree)
+        return
+
+    @classmethod
+    def port(cls, filename: str, mathlib4: Path, mathport: Path) -> None:
+        """
+        Assist in setting up a port branch and PR, tracking which file and hash is used.
+        """
+        port_status = PortStatus.deserialize_old()
+        file_status = port_status.file_statuses[filename]
+        if file_status.ported or file_status.mathlib4_pr is not None:
+            raise ValueError(f"The file is already in the process of being ported: {file_status}")
+        file_components = filename.replace("_", "").split(".")
+        source_dir = mathport / "Mathbin"
+        for component in file_components[:-1]:
+            source_dir = next(
+                subp for subp in source_dir.iterdir() if subp.name.lower() == component.lower()
+                and subp.is_dir()
+            )
+        source_file = next(
+            subp for subp in source_dir.iterdir() if
+            subp.stem.lower() == file_components[-1].lower() and subp.suffix == ".lean")
+        port_readme = mathport / "README.md"
+        hash = next(open(port_readme)).split('`')[1]
+        file_status.mathlib3_hash = hash
+        target_file = mathlib4 / "Mathlib" / source_file.relative_to(mathport / "Mathbin")
+        target_file.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copy(source_file, target_file)
+        mathlib4_repo = Repo(mathlib4)
+        reader = mathlib4_repo.config_reader()
+        username = reader.get_value("user", "email").split("@")[0]
+        branch_name = f"{username}/port-{filename.replace('.', '-')}"
+        try:
+            mathlib4_repo.git.checkout("-b", branch_name)
+        except GitCommandError:
+            mathlib4_repo.git.checkout(branch_name)
+        mathlib4_repo.git.add(target_file)
+        mathlib4_repo.index.commit("Initial file copy from mathport")
+        mathlib4_files = sorted((
+            subp for subp in cls.walk_repo(mathlib4_repo.head.commit.tree)
+            if len(subp.parents) > 2 and list(reversed(subp.parents))[1].name == "Mathlib"),
+            key=lambda subp: subp.with_suffix(""))
+        with open(mathlib4 / "Mathlib.lean", "w") as outfile:
+            for mathlib4_file in mathlib4_files:
+                module = str(mathlib4_file.with_suffix("")).replace("/", ".")
+                outfile.write(f"import {module}\n")
+        mathlib4_repo.git.add(mathlib4 / "Mathlib.lean")
+        mathlib4_repo.index.commit("Include file in import of all files")
+        file_contents = open(target_file).read()
+        with open(target_file, "w") as outfile:
+            outfile.write(file_contents.replace("Mathbin.", "Mathlib."))
+        mathlib4_repo.git.add(target_file)
+        mathlib4_repo.index.commit("Rename imports in ported file from Mathbin to Mathlib")
+        file_status.comments = "WIP"
+        # TODO: update wiki using a cloned wiki repo
+        # TODO: make PR to mathlib4
+        return
 
     def rebase(self, force: bool = False) -> None:
         """
