@@ -1072,7 +1072,7 @@ class LeanProject:
                 continue
             node["style"] = "filled"
             node["fillcolor"] = self.status_color(node["status"])
-            node["href"] = self.pr_link(node["status"])
+            node["href"] = node["status"].pr_link
             if node_name in existing_files:
                 node["color"] = "red"
 
@@ -1088,15 +1088,6 @@ class LeanProject:
         if status.comments and "ready" in status.comments:
             return "turquoise1"
         return None
-
-    @staticmethod
-    def pr_link(status: FileStatus) -> Optional[str]:
-        """
-        The github PR, as a site, associated with this file status.
-        """
-        if status.mathlib4_pr is None:
-            return None
-        return f"https://github.com/leanprover-community/mathlib4/pull/{status.mathlib4_pr}"
 
     def modules_used(self, module: str) -> List[str]:
         """
