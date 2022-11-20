@@ -38,7 +38,7 @@ class FileStatus:
     def fromdict(cls, indict: Optional[Mapping[str, Union[bool, int, str, None]]]) -> "FileStatus":
         if indict is None:
             indict = {}
-        return cls(**indict)
+        return cls(**indict)  # type: ignore
 
 
 
@@ -83,4 +83,4 @@ class PortStatus:
     def deserialize(cls, yaml: Optional[Dict[str, Any]] = None) -> "PortStatus":
         if yaml is None:
             yaml = cls.new_yaml()
-        return cls(file_statuses={k: FileStatus.fromdict(v) for k, v in yaml.items()})
+        return cls(file_statuses={k: FileStatus.fromdict(v) for k, v in yaml.items()})  # type: ignore
