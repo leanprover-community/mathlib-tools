@@ -25,6 +25,7 @@ import toml
 import yaml
 from git import (Repo, Commit, InvalidGitRepositoryError,  # type: ignore
                  GitCommandError, BadName, RemoteReference) # type: ignore
+from github import Github
 from atomicwrites import atomic_write
 
 from mathlibtools.file_status import FileStatus, PortStatus
@@ -1038,8 +1039,22 @@ class LeanProject:
         mathlib4_repo.git.add(target_file)
         mathlib4_repo.index.commit("Rename imports in ported file from Mathbin to Mathlib")
         file_status.comments = "WIP"
+        gh = Github()
+        remote_repo = gh.get_repo("leanprover-community/mathlib4")
+        labels = [label for label in remote_repo.get_labels() if label.name in {"WIP", "mathlib-port"}]
+
+        # TODO: solve github login issue
+        # pr = remote_repo.create_pull(
+        #     title=f"feat: port {filename}",
+        #     body=f"mathlib3 hash: {hash}",
+        #     head=branch_name,
+        #     base="master",
+        # )
+        # pr.set_labels(labels)
+        # file_status.mathlib4_pr = pr.number
+        # print(PortStatus(file_statuses={filename: file_status}).serialize())
+
         # TODO: update wiki using a cloned wiki repo
-        # TODO: make PR to mathlib4
         return
 
     def rebase(self, force: bool = False) -> None:

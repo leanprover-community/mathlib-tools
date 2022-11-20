@@ -56,5 +56,5 @@ class PortStatus:
             yaml = cls.old_yaml()
         return cls(file_statuses={k: FileStatus.parse_old(v) for k, v in yaml.items()})
 
-    def serialize(self) -> Dict[str, Dict[str, Union[int, str, None]]]:
+    def serialize(self) -> str:
         return yaml.dump({k: v.asdict() for k, v in self.file_statuses.items()})
