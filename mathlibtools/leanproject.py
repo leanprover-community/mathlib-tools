@@ -373,6 +373,8 @@ def port_progress(to: Optional[str]) -> None:
     proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
     longest_unported_path = graph.longest_path_length()
     progress_path = round(100 - longest_unported_path / mathlib3_longest_path * 100, 1)
+    if not to:
+        to = ""
 
     print(f"| mathlib port progress   | {to:<17} |                 |")
     print(f"| ----------------------- | ----------------- | --------------- |")
