@@ -334,10 +334,10 @@ def import_graph(
     if exclude:
         graph = graph.exclude_tactics()
         project._import_graph = graph
-    if unused and to:
-        project.show_unused(to)
     if port_status or port_status_url:
         project.port_status(port_status_url, mathlib4=None if mathlib4 is None else Path(mathlib4))
+    if unused and to:
+        project.show_unused(to)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:

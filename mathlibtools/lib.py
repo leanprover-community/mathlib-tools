@@ -1104,4 +1104,5 @@ class LeanProject:
         for label, node in self.import_graph.nodes(data=True):
             if not (label.startswith("tactic.") or label.startswith("meta.") or label in used):
                 node["style"] = "filled"
-                node["fillcolor"] = "#EEEEEE"
+                if node.get("fillcolor") is None:
+                    node["fillcolor"] = "#EEEEEE"
