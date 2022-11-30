@@ -1074,7 +1074,7 @@ class LeanProject:
             node["fillcolor"] = self.status_color(node["status"])
             if node["status"].pr_link:
                 node["href"] = '"' + node["status"].pr_link + '"'
-            if node_name in existing_files:
+            if node_name in existing_files and not node["status"].ported:
                 node["color"] = "red"
 
     @staticmethod
