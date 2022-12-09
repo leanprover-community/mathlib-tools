@@ -23,7 +23,7 @@ end
 meta def print_item_crawl (env : environment) (h : handle) (decl : declaration) : io unit :=
 let name := decl.to_name in
 do
-   put_str_ln h ((to_string name) ++ ":"), 
+   put_str_ln h ((to_string name) ++ ":"),
    put_str_ln h  ("  File: " ++ file_name (env.decl_olean name)),
    put_str_ln h ("  Line: " ++ pos_line (env.decl_pos name))
 
@@ -39,6 +39,6 @@ do curr_env ← run_tactic get_env,
    let decls := curr_env.fold [] list.cons,
    let filtered_decls := decls.filter
      (λ x, not (to_name x).is_internal),
-   let pieces := itersplit filtered_decls 3,
+   let pieces := itersplit filtered_decls 6,
    pieces.mmap' (λ l, l.mmap' (print_item_crawl curr_env h)),
    close h
