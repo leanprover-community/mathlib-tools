@@ -1071,10 +1071,11 @@ class LeanProject:
             if not node.get("status"):
                 continue
             node["style"] = "filled"
-            node["fillcolor"] = self.status_color(node["status"])
-            if node["status"].pr_link:
-                node["href"] = '"' + node["status"].pr_link + '"'
-            if node_name in existing_files:
+            file_status: FileStatus = node["status"]
+            node["fillcolor"] = node.get("fillcolor", self.status_color(file_status))
+            if file_status.pr_link:
+                node["href"] = '"' + file_status.pr_link + '"'
+            if node_name in existing_files and not file_status.ported:
                 node["color"] = "red"
 
     @staticmethod
@@ -1103,4 +1104,5 @@ class LeanProject:
         for label, node in self.import_graph.nodes(data=True):
             if not (label.startswith("tactic.") or label.startswith("meta.") or label in used):
                 node["style"] = "filled"
-                node["fillcolor"] = "#EEEEEE"
+                if node.get("fillcolor") is None:
+                    node["fillcolor"] = "#EEEEEE"
