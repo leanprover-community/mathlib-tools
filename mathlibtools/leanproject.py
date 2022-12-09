@@ -296,7 +296,7 @@ def global_upgrade() -> None:
               help='Return only imports leading to this file.')
 @click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
-@click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
+@click.option('--exclude-tactics', 'exclude_tactics', default=False, is_flag=True,
               help='Excludes tactics and meta, adding edges for transitive dependencies.')
 @click.option('--port-status', default=False, is_flag=True,
               help='Color by mathlib4 porting status')
@@ -308,16 +308,19 @@ def global_upgrade() -> None:
               help='Omit transitive imports.')
 @click.option('--show-unused', 'unused', default=False, is_flag=True,
               help='Show files which are not used by any declaration in the --to target.')
+@click.option('--exclude-ported', 'exclude_ported', default=False, is_flag=True,
+              help='Excludes files which have been ported, and all of whose children have been ported.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
     from_: Optional[str],
-    exclude : bool,
+    exclude_tactics : bool,
     port_status: bool,
     port_status_url: Optional[str],
     mathlib4: Optional[str],
     reduce: bool,
     unused: bool,
+    exclude_ported : bool,
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -331,7 +334,7 @@ def import_graph(
     """
     project = proj()
     graph = project.import_graph
-    if exclude:
+    if exclude_tactics:
         graph = graph.exclude_tactics()
         project._import_graph = graph
     if unused and to:
@@ -346,8 +349,13 @@ def import_graph(
         G = graph.descendants(from_)
     else:
         G = graph
-    if reduce or exclude:
+    if reduce or exclude_tactics or exclude_ported:
         G = G.transitive_reduction()
+    if exclude_ported:
+        G = G.delete_ported_children(exclude_tactics)
+        if to:
+            # discard stray fragments from before the ported files
+            G = G.ancestors(to)
     G.write(Path(output))
 
 
