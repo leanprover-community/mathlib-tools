@@ -101,7 +101,23 @@ class ImportGraph(nx.DiGraph):
     def delete_ported(self) -> 'ImportGraph':
         """Delete all nodes marked as ported during port_status"""
         H = self.subgraph({node for node, attrs in self.nodes(data=True)
-                          if attrs.get("status") != FileStatus.yes()})
+                          if not (attrs.get("status") and attrs.get("status").ported)})
+        H.base_path = self.base_path
+        return H
+
+    def delete_ported_children(self, exclude_tactics: bool) -> 'ImportGraph':
+        """Delete all nodes marked as ported during port_status"""
+        if exclude_tactics:
+            to_remove = {n for n in self.nodes if str.startswith(n, ('tactic.', 'meta.'))}
+        else:
+            to_remove = set()
+        finished_nodes = {node for node, attrs in self.nodes(data=True)
+                          if attrs.get("status").ported}
+        for node in finished_nodes:
+            children = {child for _, child in self.out_edges(node)}
+            if children.issubset(finished_nodes):
+                to_remove.add(node)
+        H = self.subgraph(self.nodes - to_remove)
         H.base_path = self.base_path
         return H
 

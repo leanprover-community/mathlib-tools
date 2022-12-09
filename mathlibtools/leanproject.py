@@ -296,25 +296,31 @@ def global_upgrade() -> None:
               help='Return only imports leading to this file.')
 @click.option('--from', 'from_', default=None,
               help='Return only imports starting from this file.')
-@click.option('--exclude-tactics', 'exclude', default=False, is_flag=True,
+@click.option('--exclude-tactics', 'exclude_tactics', default=False, is_flag=True,
               help='Excludes tactics and meta, adding edges for transitive dependencies.')
 @click.option('--port-status', default=False, is_flag=True,
               help='Color by mathlib4 porting status')
 @click.option('--port-status-url', default=None,
               help='URL of yaml with mathlib4 port status')
+@click.option('--mathlib4', default=None,
+              help='Local directory of mathlib4 repo')
 @click.option('--reduce', 'reduce', default=False, is_flag=True,
               help='Omit transitive imports.')
 @click.option('--show-unused', 'unused', default=False, is_flag=True,
               help='Show files which are not used by any declaration in the --to target.')
+@click.option('--exclude-ported', 'exclude_ported', default=False, is_flag=True,
+              help='Excludes files which have been ported, and all of whose children have been ported.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
     from_: Optional[str],
-    exclude : bool,
+    exclude_tactics : bool,
     port_status: bool,
     port_status_url: Optional[str],
+    mathlib4: Optional[str],
     reduce: bool,
     unused: bool,
+    exclude_ported : bool,
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -328,13 +334,13 @@ def import_graph(
     """
     project = proj()
     graph = project.import_graph
-    if exclude:
+    if exclude_tactics:
         graph = graph.exclude_tactics()
         project._import_graph = graph
+    if port_status or port_status_url:
+        project.port_status(port_status_url, mathlib4=None if mathlib4 is None else Path(mathlib4))
     if unused and to:
         project.show_unused(to)
-    if port_status or port_status_url:
-        project.port_status(port_status_url)
     if to and from_:
         G = graph.path(start=from_, end=to)
     elif to:
@@ -343,8 +349,13 @@ def import_graph(
         G = graph.descendants(from_)
     else:
         G = graph
-    if reduce or exclude:
+    if reduce or exclude_tactics or exclude_ported:
         G = G.transitive_reduction()
+    if exclude_ported:
+        G = G.delete_ported_children(exclude_tactics)
+        if to:
+            # discard stray fragments from before the ported files
+            G = G.ancestors(to)
     G.write(Path(output))
 
 
@@ -370,30 +381,29 @@ def port_progress(to: Optional[str]) -> None:
     proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
     longest_unported_path = graph.longest_path_length()
     progress_path = round(100 - longest_unported_path / mathlib3_longest_path * 100, 1)
+    if to is None:
+        to = ""
 
-    if to:
-        header = "mathlib port progress ({})".format(to)
-    else:
-        header = "mathlib port progress"
-    W = max(23, len(header))
-
-    print(f"| {header:<{W                          }} |                   |                  |")
-    print(f"| {'':-<{W                             }} | ----------------- | ---------------- |")
-    print(f"| {'Ported files:':<{W                 }} | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
-    print(f"| {'Ported lines:':<{W                 }} | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
-    print(f"| {'Longest unported chain:':<{W       }} | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
+    print(f"| mathlib port progress   | {to:<17} |                 |")
+    print(f"| ----------------------- | ----------------- | --------------- |")
+    print(f"| Ported files:           | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
+    print(f"| Ported lines:           | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
+    print(f"| Longest unported chain: | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
+    # Make sure we compute the longest path to the target,
+    # rather than in some other connected component (recall we have deleted the ported files).
+    if to:
+        graph = graph.ancestors(to)
     path: List[str] = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
-    if not to:
-        to = path[-1]
+    end = path[-1]
 
-    used = project.modules_used(to)
+    used = project.modules_used(end)
 
-    print("# Longest unported import chain up to " + to)
-    print("# This can be generated using `leanproject port-progress --to " + to + "`.")
+    print("# Longest unported import chain up to " + end)
+    print("# This can be generated using `leanproject port-progress --to " + end + "`.")
     print("# Files prefixed with '-' are apparently not required.")
     print()
 
