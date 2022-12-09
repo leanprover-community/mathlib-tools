@@ -383,6 +383,10 @@ def port_progress(to: Optional[str]) -> None:
     print(f"| Longest unported chain: | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
+    # Make sure we compute the longest path to the target,
+    # rather than in some other connected component (recall we have deleted the ported files).
+    if to:
+        graph = graph.ancestors(to)
     path: List[str] = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
