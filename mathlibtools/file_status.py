@@ -50,6 +50,9 @@ class FileStatus:
             return None
         return f"https://github.com/leanprover-community/mathlib4/pull/{self.mathlib4_pr}"
 
+    def to_gexf(self) -> str:
+        return repr(self)
+
 
 @dataclass
 class PortStatus:

@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 from typing import Optional
 import tempfile
@@ -26,7 +27,16 @@ class ImportGraph(nx.DiGraph):
     def to_gexf(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for Gephi."""
         path = path or self.base_path/'import_graph.gexf'
-        nx.write_gexf(self, str(path))
+        modified = copy.deepcopy(self)
+        for _, attrs in modified.nodes(data=True):
+            status: Optional[FileStatus] = attrs.get("status")
+            if status is None:
+                attrs["status"] = ""
+            else:
+                attrs["status"] = status.to_gexf()
+            if "fillcolor" in attrs and attrs["fillcolor"] is None:
+                attrs.pop("fillcolor")
+        nx.write_gexf(modified, str(path))
 
     def to_graphml(self, path: Optional[Path] = None) -> None:
         """Writes itself to a gexf dot file, suitable for yEd."""
