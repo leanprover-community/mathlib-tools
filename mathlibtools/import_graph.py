@@ -34,6 +34,8 @@ class ImportGraph(nx.DiGraph):
                 attrs["status"] = ""
             else:
                 attrs["status"] = status.to_gexf()
+            if "fillcolor" in attrs and attrs["fillcolor"] is None:
+                attrs.pop("fillcolor")
         nx.write_gexf(modified, str(path))
 
     def to_graphml(self, path: Optional[Path] = None) -> None:

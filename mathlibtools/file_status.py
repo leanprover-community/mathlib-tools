@@ -1,6 +1,6 @@
+import re
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, Optional, Union
-import re
 
 import requests
 import yaml
