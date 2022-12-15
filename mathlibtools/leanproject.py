@@ -299,15 +299,15 @@ def global_upgrade() -> None:
 @click.option('--exclude-tactics', 'exclude_tactics', default=False, is_flag=True,
               help='Excludes tactics and meta, adding edges for transitive dependencies.')
 @click.option('--port-status', default=False, is_flag=True,
-              help='Color by mathlib4 porting status')
+              help='Color by mathlib4 porting status. Green is already ported, dark blue is an open PR, light blue is ready to port.')
 @click.option('--port-status-url', default=None,
               help='URL of yaml with mathlib4 port status')
 @click.option('--mathlib4', default=None,
-              help='Local directory of mathlib4 repo')
+              help='Local directory of mathlib4 repo; will outline ad-hoc ported files in red.')
 @click.option('--reduce', 'reduce', default=False, is_flag=True,
               help='Omit transitive imports.')
 @click.option('--show-unused', 'unused', default=False, is_flag=True,
-              help='Show files which are not used by any declaration in the --to target.')
+              help='Show files which are not used by any declaration in the --to target, shading these nodes gray.')
 @click.option('--exclude-ported', 'exclude_ported', default=False, is_flag=True,
               help='Excludes files which have been ported, and all of whose children have been ported.')
 @click.argument('output', default='import_graph.dot')
