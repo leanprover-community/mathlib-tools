@@ -1,5 +1,11 @@
 # Change log
 
+## 1.3.2 (2022-12-15)
+
+* Add `--exclude-ported` flag for import-graph
+* make `port-progress` report longest path to the target
+
+
 ## 1.3.1 (2022-11-29)
 
 * Improvements to the port progress tool
