@@ -122,7 +122,26 @@ def unpack_archive(fname: Union[str, Path], tgt_dir: Union[str, Path],
             members : Iterable[tarfile.TarInfo] = (f for f in tarobj if Path(f.name).suffix == '.olean')
         else:
             members = tarobj
-        tarobj.extractall(
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner) 
+            
+        
+        safe_extract(tarobj, str(tgt_dir), members=tqdm(membersdesc="  files extracted",unit=""))
             str(tgt_dir), members=tqdm(members, desc='  files extracted', unit=''))
 
 def escape_identifier(s : str) -> str:
