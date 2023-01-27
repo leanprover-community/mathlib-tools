@@ -310,6 +310,8 @@ def global_upgrade() -> None:
               help='Show files which are not used by any declaration in the --to target, shading these nodes gray.')
 @click.option('--exclude-ported', 'exclude_ported', default=False, is_flag=True,
               help='Excludes files which have been ported, and all of whose children have been ported.')
+@click.option('--really-exclude-ported', 'really_exclude_ported', default=False, is_flag=True,
+              help='Excludes files which have been ported.')
 @click.argument('output', default='import_graph.dot')
 def import_graph(
     to: Optional[str],
@@ -321,6 +323,7 @@ def import_graph(
     reduce: bool,
     unused: bool,
     exclude_ported : bool,
+    really_exclude_ported : bool,
     output: str
 ) -> None:
     """Write an import graph for this project.
@@ -353,6 +356,11 @@ def import_graph(
         G = G.transitive_reduction()
     if exclude_ported:
         G = G.delete_ported_children(exclude_tactics)
+        if to:
+            # discard stray fragments from before the ported files
+            G = G.ancestors(to)
+    if really_exclude_ported:
+        G = G.delete_ported()
         if to:
             # discard stray fragments from before the ported files
             G = G.ancestors(to)
