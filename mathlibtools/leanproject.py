@@ -355,12 +355,12 @@ def import_graph(
     if reduce or exclude_tactics or exclude_ported:
         G = G.transitive_reduction()
     if exclude_ported:
-        G = G.delete_ported_children(exclude_tactics)
+        G = G.delete_ported_children(exclude_tactics, to=to)
         if to:
             # discard stray fragments from before the ported files
             G = G.ancestors(to)
     if really_exclude_ported:
-        G = G.delete_ported()
+        G = G.delete_ported(to=to)
         if to:
             # discard stray fragments from before the ported files
             G = G.ancestors(to)
@@ -382,7 +382,7 @@ def port_progress(to: Optional[str]) -> None:
     nb_files = graph.size()
     nb_lines = sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
     mathlib3_longest_path = graph.longest_path_length()
-    graph = graph.delete_ported()
+    graph = graph.delete_ported(to=to)
     nb_ported_files = nb_files - graph.size()
     proportion_files = round(nb_ported_files/nb_files*100, 1)
     nb_ported_lines = nb_lines - sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
