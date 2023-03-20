@@ -117,7 +117,7 @@ class ImportGraph(nx.DiGraph):
         return H
 
     def delete_ported_children(self, exclude_tactics: bool, to:str='') -> 'ImportGraph':
-        """Delete children nodes marked as ported during port_status that are only imported by ported nodes."""
+        """Delete all nodes marked as ported during port_status"""
         if exclude_tactics:
             to_remove = {n for n in self.nodes if str.startswith(n, ('tactic.', 'meta.'))}
         else:
