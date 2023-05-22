@@ -131,6 +131,19 @@ class ImportGraph(nx.DiGraph):
         H.base_path = self.base_path
         return H
 
+    def completely_ported(self) -> 'ImportGraph':
+        """Retain only nodes marked as ported, and all of whose descendants are marked as ported."""
+        unported = {node for node, attrs in self.nodes(data=True)
+                    if not (attrs.get("status") and attrs.get("status").ported)}
+        unported.discard("all")
+        keeping = set(self.nodes)
+        keeping.discard("all")
+        for n in unported:
+            keeping = keeping.difference(nx.ancestors(self, n))
+            keeping.discard(n)
+        H = self.subgraph(keeping)
+        return H
+
     def size(self) -> 'int':
         return nx.number_of_nodes(self)
 
