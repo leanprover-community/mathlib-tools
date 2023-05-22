@@ -35,7 +35,7 @@ def test_new(tmpdir):
     chdir(tmpdir)
     subprocess.run(['leanproject', 'new'])
     assert (tmpdir/'leanpkg.path').exists()
-    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
+    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'free.olean').exists()
 
 def test_add(tmpdir):
     """Add mathlib to a project and check mathlib oleans are there."""
@@ -43,7 +43,7 @@ def test_add(tmpdir):
     subprocess.run(['leanpkg', 'init', 'project'])
     fix_leanpkg_bug()
     subprocess.run(['leanproject', 'add-mathlib'])
-    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
+    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'free.olean').exists()
 
 def test_upgrade_project(tmpdir):
     chdir(tmpdir)
@@ -54,7 +54,7 @@ def test_upgrade_project(tmpdir):
             'mathlib = {git = "https://github.com/leanprover-community/mathlib",'
             'rev = "a9ed54ca0329771deab21d7574d7d19b417bf4a3"}')
     subprocess.run(['leanproject', 'upgrade-mathlib'])
-    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
+    assert (tmpdir/'_target'/'deps'/'mathlib'/'src'/'algebra'/'free.olean').exists()
 
 def test_upgrade_mathlib(tmpdir):
     chdir(tmpdir)
@@ -63,10 +63,10 @@ def test_upgrade_mathlib(tmpdir):
     subprocess.run(['git', 'checkout', 'lean-3.5.1'])
     subprocess.run(['git', 'reset', '--hard', 'a9ed54ca0329771deab21d7574d7d19b417bf4a3'])
     subprocess.run(['leanproject', 'upgrade-mathlib'])
-    assert (tmpdir/'mathlib'/'src'/'algebra'/'default.olean').exists()
+    assert (tmpdir/'mathlib'/'src'/'algebra'/'free.olean').exists()
 
 def test_get_tutorials(tmpdir):
     chdir(tmpdir)
     subprocess.run(['leanproject', 'get', 'tutorials'])
     assert (tmpdir/'tutorials'/'src').exists()
-    assert (tmpdir/'tutorials'/'_target'/'deps'/'mathlib'/'src'/'algebra'/'default.olean').exists()
+    assert (tmpdir/'tutorials'/'_target'/'deps'/'mathlib'/'src'/'algebra'/'free.olean').exists()
