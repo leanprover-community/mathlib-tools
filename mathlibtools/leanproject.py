@@ -421,6 +421,18 @@ def port_progress(to: Optional[str]) -> None:
         else:
             print("- " + n)
 
+@cli.command()
+def port_complete() -> None:
+    """List all files which have been ported to mathlib4,
+    and all downstream dependencies have been ported."""
+    project = proj()
+    project.port_status()
+    graph = project.import_graph
+    graph = graph.exclude_tactics()
+    graph = graph.transitive_reduction()
+    R = graph.completely_ported()
+    for n in sorted([n for n in R.nodes]):
+        print(n)
 
 @cli.command()
 @click.option('--sed', 'sed', default=False, is_flag=True,
