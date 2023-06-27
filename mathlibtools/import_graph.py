@@ -77,6 +77,11 @@ class ImportGraph(nx.DiGraph):
         H.base_path = self.base_path
         return H
 
+    def big_component(self) -> 'ImportGraph':
+        H = self.subgraph(max(nx.weakly_connected_components(self), key=len))
+        H.base_path = self.base_path
+        return H
+
     def path(self, start: str, end: str) -> 'ImportGraph':
         """Returns the subgraph descending from the start node and used by the
         end node."""

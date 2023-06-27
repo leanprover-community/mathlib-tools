@@ -383,28 +383,25 @@ def port_progress(to: Optional[str]) -> None:
     nb_lines = sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
     mathlib3_longest_path = graph.longest_path_length()
     graph = graph.delete_ported()
+    # Again, to discard stray fragments after deleting ported files
+    if to:
+        graph = graph.ancestors(to)
     nb_ported_files = nb_files - graph.size()
     proportion_files = round(nb_ported_files/nb_files*100, 1)
     nb_ported_lines = nb_lines - sum(node.get("nb_lines", 0) for name, node in graph.nodes(data=True))
     proportion_lines = round(nb_ported_lines/nb_lines*100, 1)
     longest_unported_path = graph.longest_path_length()
-    progress_path = round(100 - longest_unported_path / mathlib3_longest_path * 100, 1)
+    progress_path = round(100 - (longest_unported_path + 1) / mathlib3_longest_path * 100, 1)
     if to is None:
         to = ""
 
     print(f"| mathlib port progress   | {to:<17} |                 |")
     print(f"| ----------------------- | ----------------- | --------------- |")
-    # See https://leanprover.zulipchat.com/#narrow/stream/287929-mathlib4/topic/port.20progress/near/360878644
-    # for the -7 here.
-    print(f"| Unported files:         | {nb_files - nb_ported_files - 7:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
+    print(f"| Unported files:         | {nb_files - nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
     print(f"| Unported lines:         | {nb_lines - nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
-    print(f"| Longest unported chain: | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
+    print(f"| Longest unported chain: | {longest_unported_path + 1:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
-    # Make sure we compute the longest path to the target,
-    # rather than in some other connected component (recall we have deleted the ported files).
-    if to:
-        graph = graph.ancestors(to)
     path: List[str] = graph.longest_path()
     if path[-1] == "all":
         path = path[:-1]
