@@ -394,8 +394,10 @@ def port_progress(to: Optional[str]) -> None:
 
     print(f"| mathlib port progress   | {to:<17} |                 |")
     print(f"| ----------------------- | ----------------- | --------------- |")
-    print(f"| Ported files:           | {nb_ported_files:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
-    print(f"| Ported lines:           | {nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
+    # See https://leanprover.zulipchat.com/#narrow/stream/287929-mathlib4/topic/port.20progress/near/360878644
+    # for the -7 here.
+    print(f"| Unported files:         | {nb_files - nb_ported_files - 7:>8}/{nb_files:<8} | ({proportion_files:>3}% of total) |")
+    print(f"| Unported lines:         | {nb_lines - nb_ported_lines:>8}/{nb_lines:<8} | ({proportion_lines:>3}% of total) |")
     print(f"| Longest unported chain: | {longest_unported_path:>8}/{mathlib3_longest_path:<8} | ({progress_path:>3}% progress) |")
     print()
 
