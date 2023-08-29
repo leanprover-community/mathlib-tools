@@ -4,12 +4,14 @@
 ![Test on MacOS](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20MacOS/badge.svg)
 ![Test on Windows](https://github.com/leanprover-community/mathlib-tools/workflows/Test%20on%20Windows/badge.svg)
 
-This package contains `leanproject`, a supporting tool for [Lean mathlib](https://leanprover-community.github.io/).
+This package contains `leanproject`, a supporting tool for [Lean 3 mathlib](https://leanprover-community.github.io/lean3).
+
+This tool is **fully obsolete** and no longer has any relevance outside of historical studies. All Lean users are now expected to switch to Lean 4 which is not supported at all by this tool.
 
 ## Installation
 
 In principle, you should install those tools as part of the 
-[global Lean installation procedure](https://leanprover-community.github.io/get_started.html#regular-install) recommended by the Lean community. 
+[global Lean installation procedure](https://leanprover-community.github.io/lean3/get_started.html#regular-install) recommended by the Lean community. 
 Read what what remains of this section only if you want more details
 about this specific part of the procedure (the tools described here won't give
 you anything if Lean itself is not available).
@@ -66,4 +68,5 @@ repository, go to the repository folder, and run `pip install .`.
 
 ## Usage
 
-See the [dedicated page](https://leanprover-community.github.io/leanproject.html) on the community website.
+See the [dedicated page](https://leanprover-community.github.io/lean3/leanproject.html) on the community website.
+Recall this tool is **fully obsolete** and no longer has any relevance outside of historical studies. All Lean users are now expected to switch to Lean 4 which is not supported at all by this tool.
